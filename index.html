@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gym Tracker Pro 2.0 💪</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        :root {
+            --bg: #121212; --card: #1e1e1e; --text: #e0e0e0; 
+            --accent: #00e676; /* ירוק */
+            --warmup: #ff9800; /* כתום לחימום */
+            --input-bg: #2c2c2c;
+        }
+        body { 
+            font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text);
+            text-align: center; padding: 15px; margin: 0; 
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        /* תפריט ראשי */
+        h1 { color: var(--accent); margin-bottom: 20px; letter-spacing: 1px; font-size: 1.8rem; }
+        .menu-grid { display: grid; grid-template-columns: 1fr; gap: 15px; max-width: 500px; margin: 0 auto; }
+        
+        .menu-btn {
+            background: var(--card); border: 2px solid var(--accent); color: white;
+            padding: 20px; font-size: 1.1rem; font-weight: bold; border-radius: 15px;
+            cursor: pointer; transition: 0.2s; box-shadow: 0 4px 15px rgba(0,230,118,0.1);
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+        }
+        .menu-btn:active { transform: scale(0.96); background: var(--accent); color: black; }
+
+        /* מסכים פנימיים */
+        .screen { display: none; max-width: 600px; margin: 0 auto; padding-bottom: 50px; }
+        .back-btn { background: none; border: none; color: #888; font-size: 0.9rem; margin-bottom: 15px; cursor: pointer; text-decoration: underline; }
+        
+        /* כרטיס תרגיל */
+        .exercise-card {
+            background: var(--card); padding: 10px; margin-bottom: 15px; border-radius: 12px;
+            text-align: right; border-right: 4px solid var(--accent); position: relative;
+        }
+        .ex-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .ex-title { font-size: 1.1rem; font-weight: bold; color: white; }
+        
+        .add-set-btn {
+            background: var(--card); border: 1px solid var(--accent); color: var(--accent);
+            border-radius: 50%; width: 30px; height: 30px; font-size: 1.2rem; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        /* שורת סט */
+        .set-row { 
+            display: flex; gap: 8px; margin-bottom: 8px; align-items: center; 
+            background: rgba(255,255,255,0.03); padding: 5px; border-radius: 5px;
+        }
+        .set-row.warmup { 
+            border: 1px solid var(--warmup); background: rgba(255, 152, 0, 0.1); 
+        }
+        
+        .set-label { font-size: 0.7rem; color: #aaa; width: 30px; }
+        .warmup-label { font-size: 0.7rem; color: var(--warmup); font-weight: bold; width: 40px; }
+
+        input[type="number"] {
+            background: var(--input-bg); border: 1px solid #444; color: white;
+            padding: 8px; border-radius: 5px; text-align: center; font-size: 1rem;
+            width: 100%; box-sizing: border-box; flex: 1;
+        }
+        input:focus { border-color: var(--accent); outline: none; }
+        
+        .del-btn { background: none; border: none; color: #ff5252; cursor: pointer; font-size: 1.2rem; padding: 0 5px; }
+
+        .save-btn {
+            background: var(--accent); color: black; border: none; width: 100%;
+            padding: 15px; font-size: 1.2rem; font-weight: bold; border-radius: 50px;
+            margin-top: 20px; cursor: pointer; position: sticky; bottom: 10px; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+
+        /* היסטוריה וגרפים */
+        .history-item { 
+            background: var(--card); padding: 15px; margin-bottom: 10px; border-radius: 10px; 
+            text-align: right; border-left: 3px solid #666; 
+        }
+        .history-date { font-size: 0.8rem; color: #888; margin-bottom: 5px; }
+        .history-type { font-weight: bold; color: var(--accent); margin-bottom: 10px; }
+        .history-detail { font-size: 0.85rem; color: #ccc; white-space: pre-wrap; line-height: 1.4; }
+
+        select { 
+            padding: 12px; background: var(--card); color: white; border: 1px solid var(--accent); 
+            border-radius: 8px; width: 100%; margin-bottom: 20px; font-size: 1rem;
+        }
+        canvas { background: var(--card); border-radius: 10px; padding: 5px; }
+
+    </style>
+</head>
+<body>
+
+    <div id="home-screen" class="screen" style="display:block;">
+        <h1>Gym Tracker Pro 2.0 🏋️‍♂️</h1>
+        <div class="menu-grid">
+            <button class="menu-btn" onclick="openWorkout('legs')">🦵 רגליים ובטן</button>
+            <button class="menu-btn" onclick="openWorkout('push')">💪 חזה, כתפיים, יד אחורית</button>
+            <button class="menu-btn" onclick="openWorkout('pull')">🦍 גב ויד קדמית</button>
+            <button class="menu-btn" style="border-color:#ff9800; color:#ff9800;" onclick="openHistory()">📜 היסטוריה וגרפים</button>
+        </div>
+    </div>
+
+    <div id="workout-screen" class="screen">
+        <button class="back-btn" onclick="goHome()">חזרה לתפריט</button>
+        <h2 id="workout-title">שם האימון</h2>
+        <div id="exercises-container"></div>
+        <button class="save-btn" onclick="saveWorkout()">💾 שמור אימון</button>
+    </div>
+
+    <div id="history-screen" class="screen">
+        <button class="back-btn" onclick="goHome()">חזרה לתפריט</button>
+        
+        <h3>📈 גרף התקדמות (כוח משוקלל)</h3>
+        <select id="graph-select" onchange="renderGraph()"></select>
+        <canvas id="progressChart"></canvas>
+        
+        <h3 style="margin-top:30px;">📜 היסטוריית אימונים</h3>
+        <div id="history-list"></div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+          apiKey: "AIzaSyBR9taEgDlp4CaFa1oDlA2wM9ENoZD2V9U",
+          authDomain: "nano-banana-gallery-4e291.firebaseapp.com",
+          projectId: "nano-banana-gallery-4e291",
+          storageBucket: "nano-banana-gallery-4e291.firebasestorage.app",
+          messagingSenderId: "843216131791",
+          appId: "1:843216131791:web:e63ec1ab2f70b0808dc9ba"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const COLLECTION = "gym_tracker_v2"; // שם אוסף חדש לגרסה החדשה
+
+        const workoutData = {
+            'legs': { title: 'רגליים ובטן', exercises: ['סקוואט (Squat)', 'לחיצת רגליים', 'פשיטת ברכיים', 'כפיפת ברכיים', 'תאומים', 'כפיפות בטן'] },
+            'push': { title: 'חזה, כתפיים, יד אחורית', exercises: ['לחיצת חזה (Bench)', 'לחיצת חזה עליון', 'פרפר', 'לחיצת כתפיים', 'הרחקה לצדדים', 'פשיטת מרפקים (Triceps)', 'מקבילים'] },
+            'pull': { title: 'גב ויד קדמית', exercises: ['דדליפט (Deadlift)', 'מתח', 'חתירה (Rows)', 'פולי עליון', 'כפיפת מרפקים (Curls)', 'פטישים'] }
+        };
+
+        let currentWorkoutType = '';
+
+        function goHome() {
+            document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
+            document.getElementById('home-screen').style.display = 'block';
+        }
+
+        // --- פתיחת אימון ---
+        async function openWorkout(type) {
+            currentWorkoutType = type;
+            document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
+            document.getElementById('workout-screen').style.display = 'block';
+            document.getElementById('workout-title').innerText = workoutData[type].title;
+            
+            const container = document.getElementById('exercises-container');
+            container.innerHTML = 'טוען נתונים מהאימון הקודם...';
+
+            // שליפת אימון אחרון לזיכרון שריר
+            let lastExercises = {};
+            try {
+                const snapshot = await db.collection(COLLECTION).where('type', '==', type).orderBy('date', 'desc').limit(1).get();
+                if (!snapshot.empty) {
+                    lastExercises = snapshot.docs[0].data().exercisesData || {};
+                }
+            } catch (e) { console.log("No previous data", e); }
+
+            container.innerHTML = '';
+
+            workoutData[type].exercises.forEach(exName => {
+                // יצירת כרטיס תרגיל
+                const card = document.createElement('div');
+                card.className = 'exercise-card';
+                card.id = `card-${exName}`;
+
+                // כותרת וכפתור פלוס
+                card.innerHTML = `
+                    <div class="ex-header">
+                        <span class="ex-title">${exName}</span>
+                        <button class="add-set-btn" onclick="addSetRow('${exName}', true)">+</button>
+                    </div>
+                    <div id="sets-${exName}"></div>
+                `;
+                container.appendChild(card);
+
+                // מילוי סטים
+                const prevSets = lastExercises[exName] || [{ w: 0, r: 0, isWarmup: false }, { w: 0, r: 0, isWarmup: false }];
+                
+                // אם אין היסטוריה, ניצור 2 שורות ריקות. אם יש, נשחזר.
+                prevSets.forEach(set => {
+                    addSetRow(exName, set.isWarmup, set.w, set.r);
+                });
+            });
+        }
+
+        // --- הוספת שורת סט (לוגיקה) ---
+        function addSetRow(exName, isWarmup = false, weight = '', reps = '') {
+            const container = document.getElementById(`sets-${exName}`);
+            const row = document.createElement('div');
+            row.className = `set-row ${isWarmup ? 'warmup' : ''}`;
+            
+            row.innerHTML = `
+                ${isWarmup ? '<span class="warmup-label">🔥 חימום</span>' : '<span class="set-label">עבודה</span>'}
+                <input type="number" placeholder="ק&quot;ג" class="inp-weight" value="${weight}">
+                <input type="number" placeholder="חזרות" class="inp-reps" value="${reps}">
+                <button class="del-btn" onclick="this.parentElement.remove()">×</button>
+            `;
+
+            if (isWarmup) {
+                container.prepend(row); // חימום תמיד למעלה
+            } else {
+                container.appendChild(row); // עבודה למטה
+            }
+        }
+
+        // --- שמירה ---
+        function saveWorkout() {
+            const exercisesData = {};
+            const exerciseList = workoutData[currentWorkoutType].exercises;
+            
+            exerciseList.forEach(exName => {
+                const setsDiv = document.getElementById(`sets-${exName}`);
+                const rows = setsDiv.querySelectorAll('.set-row');
+                const setsData = [];
+                
+                rows.forEach(row => {
+                    const w = Number(row.querySelector('.inp-weight').value);
+                    const r = Number(row.querySelector('.inp-reps').value);
+                    const isWarmup = row.classList.contains('warmup');
+                    
+                    if (w > 0 || r > 0) { // שומרים רק אם הוזן משהו
+                        setsData.push({ w, r, isWarmup });
+                    }
+                });
+                
+                if (setsData.length > 0) exercisesData[exName] = setsData;
+            });
+
+            db.collection(COLLECTION).add({
+                type: currentWorkoutType,
+                date: firebase.firestore.FieldValue.serverTimestamp(),
+                exercisesData: exercisesData
+            }).then(() => {
+                confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+                alert("אימון נשמר! התחזקת 💪");
+                goHome();
+            }).catch(e => alert("שגיאה: " + e));
+        }
+
+        // --- היסטוריה וגרפים ---
+        async function openHistory() {
+            document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
+            document.getElementById('history-screen').style.display = 'block';
+            
+            // טעינת רשימת תרגילים לגרף
+            const select = document.getElementById('graph-select');
+            select.innerHTML = '<option value="">בחר תרגיל להצגה...</option>';
+            const allExercises = [
+                ...workoutData['legs'].exercises,
+                ...workoutData['push'].exercises,
+                ...workoutData['pull'].exercises
+            ].sort();
+            allExercises.forEach(ex => select.innerHTML += `<option value="${ex}">${ex}</option>`);
+
+            // טעינת היסטוריה
+            const list = document.getElementById('history-list');
+            list.innerHTML = 'טוען...';
+            
+            const snapshot = await db.collection(COLLECTION).orderBy('date', 'desc').limit(20).get();
+            list.innerHTML = '';
+            
+            if(snapshot.empty) { list.innerHTML = "אין אימונים עדיין."; return; }
+
+            snapshot.forEach(doc => {
+                const d = doc.data();
+                const dateObj = d.date ? d.date.toDate() : new Date();
+                const dateStr = dateObj.toLocaleDateString('he-IL') + ' ' + dateObj.toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'});
+                
+                let details = "";
+                for (const [exName, sets] of Object.entries(d.exercisesData)) {
+                    // מציג רק סטים של עבודה בפירוט כדי לא לחפור
+                    const workSets = sets.filter(s => !s.isWarmup).map(s => `${s.w}x${s.r}`).join(', ');
+                    if(workSets) details += `${exName}: ${workSets}\n`;
+                }
+
+                list.innerHTML += `
+                    <div class="history-item">
+                        <div class="history-date">${dateStr}</div>
+                        <div class="history-type">${workoutData[d.type]?.title || d.type}</div>
+                        <div class="history-detail">${details || 'רק חימום / ללא נתונים'}</div>
+                    </div>
+                `;
+            });
+        }
+
+        // --- לוגיקת גרף (1RM משוקלל) ---
+        let myChart = null;
+
+        async function renderGraph() {
+            const exName = document.getElementById('graph-select').value;
+            if (!exName) return;
+
+            const snapshot = await db.collection(COLLECTION).orderBy('date', 'asc').get();
+            const labels = [];
+            const dataPoints = [];
+
+            snapshot.forEach(doc => {
+                const d = doc.data();
+                if (d.exercisesData && d.exercisesData[exName]) {
+                    const sets = d.exercisesData[exName];
+                    
+                    // חישוב הכוח המקסימלי (1RM) לאימון זה
+                    // הנוסחה: משקל * (1 + חזרות/30)
+                    // מתעלמים מסטים של חימום
+                    let maxStrength = 0;
+                    sets.forEach(s => {
+                        if (!s.isWarmup && s.w > 0 && s.r > 0) {
+                            const strength = s.w * (1 + s.r / 30);
+                            if (strength > maxStrength) maxStrength = strength;
+                        }
+                    });
+
+                    if (maxStrength > 0) {
+                        const dateObj = d.date.toDate();
+                        labels.push(dateObj.toLocaleDateString('he-IL', {day:'2-digit', month:'2-digit'}));
+                        dataPoints.push(Math.round(maxStrength));
+                    }
+                }
+            });
+
+            const ctx = document.getElementById('progressChart').getContext('2d');
+            if (myChart) myChart.destroy();
+
+            myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: `כוח משוקלל (1RM): ${exName}`,
+                        data: dataPoints,
+                        borderColor: '#00e676',
+                        backgroundColor: 'rgba(0, 230, 118, 0.1)',
+                        borderWidth: 3,
+                        pointBackgroundColor: '#fff',
+                        pointRadius: 5,
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { beginAtZero: false, grid: { color: '#333' }, ticks: { color: '#ccc' } },
+                        x: { grid: { color: '#333' }, ticks: { color: '#ccc' } }
+                    },
+                    plugins: { legend: { labels: { color: 'white' } } }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
