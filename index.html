@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gym Tracker Pro 2.0 💪</title>
+    <title>Gym Tracker Pro 3.0 💪</title>
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -67,10 +67,13 @@
 
         input[type="number"] {
             background: var(--input-bg); border: 1px solid #444; color: white;
-            padding: 8px; border-radius: 5px; text-align: center; font-size: 1rem;
+            padding: 8px; border-radius: 5px; text-align: center; font-size: 0.9rem;
             width: 100%; box-sizing: border-box; flex: 1;
         }
         input:focus { border-color: var(--accent); outline: none; }
+        
+        /* placeholder styling */
+        ::placeholder { color: #666; opacity: 1; font-size: 0.8rem; }
         
         .del-btn { background: none; border: none; color: #ff5252; cursor: pointer; font-size: 1.2rem; padding: 0 5px; }
 
@@ -101,11 +104,11 @@
 <body>
 
     <div id="home-screen" class="screen" style="display:block;">
-        <h1>Gym Tracker Pro 2.0 🏋️‍♂️</h1>
+        <h1>Gym Tracker Pro 3.0 🏋️‍♂️</h1>
         <div class="menu-grid">
             <button class="menu-btn" onclick="openWorkout('legs')">🦵 רגליים ובטן</button>
-            <button class="menu-btn" onclick="openWorkout('push')">💪 חזה, כתפיים, יד אחורית</button>
             <button class="menu-btn" onclick="openWorkout('pull')">🦍 גב ויד קדמית</button>
+            <button class="menu-btn" onclick="openWorkout('push')">💪 חזה, כתפיים ויד אחורית</button>
             <button class="menu-btn" style="border-color:#ff9800; color:#ff9800;" onclick="openHistory()">📜 היסטוריה וגרפים</button>
         </div>
     </div>
@@ -139,12 +142,22 @@
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
-        const COLLECTION = "gym_tracker_v2"; // שם אוסף חדש לגרסה החדשה
+        const COLLECTION = "gym_tracker_v3"; // גרסה חדשה
 
+        // --- רשימת התרגילים המעודכנת ---
         const workoutData = {
-            'legs': { title: 'רגליים ובטן', exercises: ['סקוואט (Squat)', 'לחיצת רגליים', 'פשיטת ברכיים', 'כפיפת ברכיים', 'תאומים', 'כפיפות בטן'] },
-            'push': { title: 'חזה, כתפיים, יד אחורית', exercises: ['לחיצת חזה (Bench)', 'לחיצת חזה עליון', 'פרפר', 'לחיצת כתפיים', 'הרחקה לצדדים', 'פשיטת מרפקים (Triceps)', 'מקבילים'] },
-            'pull': { title: 'גב ויד קדמית', exercises: ['דדליפט (Deadlift)', 'מתח', 'חתירה (Rows)', 'פולי עליון', 'כפיפת מרפקים (Curls)', 'פטישים'] }
+            'legs': { 
+                title: 'רגליים ובטן', 
+                exercises: ['סקוואט', 'כפיפת ברכיים', 'פשיטת ברכיים', 'עליות תאומים', 'כפיפות בטן', 'הרמות רגליים'] 
+            },
+            'pull': { 
+                title: 'גב ויד קדמית', 
+                exercises: ['מתח', 'מתח עילי', 'חתירה בכיסא', 'כתף אחורית', 'כפיפה במרפק', 'פטישים באלכסון'] 
+            },
+            'push': { 
+                title: 'חזה, כתפיים ויד אחורית', 
+                exercises: ['באנץ\'', 'באנץ\' בשיפוע', 'פרפר', 'כתפיים', 'פשיטת כתפיים', 'יד אחורית', 'יד אחורית מעל הראש'] 
+            }
         };
 
         let currentWorkoutType = '';
@@ -192,7 +205,7 @@
                 container.appendChild(card);
 
                 // מילוי סטים
-                const prevSets = lastExercises[exName] || [{ w: 0, r: 0, isWarmup: false }, { w: 0, r: 0, isWarmup: false }];
+                const prevSets = lastExercises[exName] || [{ w: '', r: '', isWarmup: false }, { w: '', r: '', isWarmup: false }];
                 
                 // אם אין היסטוריה, ניצור 2 שורות ריקות. אם יש, נשחזר.
                 prevSets.forEach(set => {
@@ -207,9 +220,10 @@
             const row = document.createElement('div');
             row.className = `set-row ${isWarmup ? 'warmup' : ''}`;
             
+            // כאן השינוי: הכנסת הכיתוב "משקל" ו"חזרות" לתוך ה-placeholder
             row.innerHTML = `
                 ${isWarmup ? '<span class="warmup-label">🔥 חימום</span>' : '<span class="set-label">עבודה</span>'}
-                <input type="number" placeholder="ק&quot;ג" class="inp-weight" value="${weight}">
+                <input type="number" placeholder="משקל" class="inp-weight" value="${weight}">
                 <input type="number" placeholder="חזרות" class="inp-reps" value="${reps}">
                 <button class="del-btn" onclick="this.parentElement.remove()">×</button>
             `;
@@ -317,9 +331,6 @@
                 if (d.exercisesData && d.exercisesData[exName]) {
                     const sets = d.exercisesData[exName];
                     
-                    // חישוב הכוח המקסימלי (1RM) לאימון זה
-                    // הנוסחה: משקל * (1 + חזרות/30)
-                    // מתעלמים מסטים של חימום
                     let maxStrength = 0;
                     sets.forEach(s => {
                         if (!s.isWarmup && s.w > 0 && s.r > 0) {
