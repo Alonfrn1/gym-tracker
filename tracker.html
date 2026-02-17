@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gym Tracker V17 (Full Memory) 🧠</title>
+    <title>Gym Tracker Stable 🦍</title>
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -17,23 +17,28 @@
         
         h1 { color: var(--accent); margin-bottom: 20px; }
         
+        /* תפריט */
         .menu-btn { 
             display: block; width: 100%; background: var(--card); border: 1px solid #333; 
             color: white; padding: 25px; font-size: 1.5rem; margin-bottom: 15px; border-radius: 15px; cursor: pointer;
         }
 
+        /* כרטיס תרגיל */
         .exercise-card { background: var(--card); padding: 15px; margin-bottom: 20px; border-radius: 16px; border-right: 6px solid var(--accent); text-align: right; }
         .ex-title { font-size: 1.4rem; font-weight: bold; margin-bottom: 15px; display: block; }
         
+        /* שורת סט */
         .set-row { 
             display: flex; gap: 10px; margin-bottom: 10px; align-items: center; 
             background: #2c2c2e; padding: 10px; border-radius: 10px; 
         }
         
+        /* עיצוב חימום */
         .set-row.is-warmup { 
             background: rgba(255, 145, 0, 0.15); border: 1px solid var(--warmup); 
         }
 
+        /* כפתור סוג (סט/חימום) */
         .type-badge { 
             background: #444; color: #aaa; padding: 10px; border-radius: 8px; 
             width: 60px; text-align: center; font-weight: bold; font-size: 0.9rem; cursor: pointer;
@@ -54,6 +59,7 @@
             cursor: pointer; font-weight: bold; font-size: 1rem;
         }
 
+        /* כפתור שמירה */
         .save-btn { 
             position: fixed; bottom: 30px; left: 5%; width: 90%; 
             background: var(--accent); color: black; padding: 18px; 
@@ -65,8 +71,7 @@
 <body>
 
     <div id="home-screen" class="screen visible">
-        <h1>Gym Tracker V17 🧠</h1>
-        <p style="color:#777;">זוכר הכל: מבנה, משקלים וחזרות.</p>
+        <h1>Gym Tracker 🦍</h1>
         <button class="menu-btn" onclick="app.load('legs')">🦵 רגליים</button>
         <button class="menu-btn" onclick="app.load('push')">💪 חזה/כתפיים/יד אחורית</button>
         <button class="menu-btn" onclick="app.load('pull')">🦍 גב/יד קדמית</button>
@@ -90,7 +95,7 @@
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
-        const COLLECTION = "gym_v17_full_memory"; 
+        const COLLECTION = "gym_simple_stable"; // בסיס נתונים נקי וחדש
 
         const EXERCISES = {
             'legs': { title: 'רגליים ובטן', list: [
@@ -117,8 +122,9 @@
                 document.getElementById('workout-screen').classList.add('visible');
                 document.getElementById('page-title').innerText = EXERCISES[type].title;
                 const container = document.getElementById('container');
-                container.innerHTML = '<div style="margin-top:50px;">טוען את האימון האחרון מהענן...</div>';
+                container.innerHTML = '<div style="margin-top:50px;">טוען נתונים...</div>';
 
+                // 1. נסיון למשוך את האימון האחרון
                 let lastWorkoutData = {};
                 try {
                     const snap = await db.collection(COLLECTION).where('type','==',type).orderBy('date','desc').limit(1).get();
@@ -126,11 +132,12 @@
                         lastWorkoutData = snap.docs[0].data().data;
                     }
                 } catch(e) {
-                    alert("שגיאת רשת: " + e.message);
+                    alert("שגיאת רשת (אבל האתר ימשיך לעבוד): " + e.message);
                 }
 
                 container.innerHTML = '';
 
+                // 2. בניית המסך
                 EXERCISES[type].list.forEach(ex => {
                     const card = document.createElement('div');
                     card.className = 'exercise-card';
@@ -139,19 +146,20 @@
                     const addBtn = document.createElement('button');
                     addBtn.className = 'add-btn';
                     addBtn.innerText = '+ הוסף סט';
-                    addBtn.onclick = () => app.addRow(ex.id, false, '', '');
+                    // שימוש ב-ID בטוח בלי גרשיים
+                    addBtn.onclick = function() { app.addRow(ex.id, false, '', ''); };
                     card.appendChild(addBtn);
                     
                     container.appendChild(card);
 
-                    // שחזור מלא: מבנה + נתונים
+                    // 3. שחזור המבנה והנתונים
                     if (lastWorkoutData[ex.id] && lastWorkoutData[ex.id].length > 0) {
                         lastWorkoutData[ex.id].forEach(savedRow => {
-                            // מעבירים גם את המשקל (w) והחזרות (r) לפונקציה
+                            // טוען בדיוק את מה שהיה: סוג, משקל, חזרות
                             app.addRow(ex.id, savedRow.isWarmup, savedRow.w, savedRow.r); 
                         });
                     } else {
-                        // ברירת מחדל אם אין היסטוריה
+                        // ברירת מחדל: 3 שורות רגילות ריקות
                         app.addRow(ex.id, false, '', '');
                         app.addRow(ex.id, false, '', '');
                         app.addRow(ex.id, false, '', '');
@@ -159,7 +167,6 @@
                 });
             },
 
-            // הפונקציה מקבלת עכשיו גם משקל וחזרות
             addRow: (exId, isWarmup, weight = '', reps = '') => {
                 const container = document.getElementById(`rows-${exId}`);
                 const row = document.createElement('div');
@@ -205,10 +212,11 @@
                         const r = row.querySelector('.inp-r').value;
                         const isWarmup = row.classList.contains('is-warmup');
                         
-                        // שומרים הכל כולל הערכים
+                        // שומר את השורה בדיוק כמו שהיא, כולל הכל
                         exData.push({ w, r, isWarmup });
                     });
                     
+                    // שומרים גם אם השורות ריקות כדי לשמור על המבנה!
                     if(exData.length > 0) allData[ex.id] = exData;
                 });
 
@@ -219,7 +227,7 @@
                         data: allData
                     });
                     btn.innerText = "נשמר! ✅";
-                    setTimeout(() => { location.reload(); }, 1500);
+                    setTimeout(() => { location.reload(); }, 1000);
                 } catch(e) {
                     alert("שגיאה: " + e.message);
                     btn.innerText = "שגיאה";
