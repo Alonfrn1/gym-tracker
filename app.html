@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gym Tracker V9 (Fixed) 🛡️</title>
+    <title>Gym Tracker V10 (Hybrid) 🦍</title>
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -11,83 +11,96 @@
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
     <style>
-        :root { --bg: #121212; --card: #1e1e1e; --text: #e0e0e0; --accent: #00e676; --warmup: #ff9800; --input: #333; }
-        body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; text-align: center; padding-bottom: 100px; }
+        :root { --bg: #000000; --card: #1c1c1e; --text: #f2f2f7; --accent: #30d158; --warmup: #ff9f0a; --delete: #ff453a; --input: #2c2c2e; }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; text-align: center; padding-bottom: 120px; touch-action: manipulation; }
         
-        h1 { color: var(--accent); margin-bottom: 20px; }
-        .menu-grid { display: grid; gap: 15px; max-width: 400px; margin: 0 auto; }
-        .menu-btn { background: var(--card); border: 2px solid var(--accent); color: white; padding: 20px; font-size: 1.2rem; border-radius: 12px; cursor: pointer; }
+        h1 { color: var(--accent); margin-bottom: 20px; font-weight: 800; letter-spacing: -0.5px; }
+        
+        .menu-grid { display: grid; gap: 12px; max-width: 400px; margin: 0 auto; }
+        .menu-btn { 
+            background: var(--card); border: 1px solid #333; color: white; 
+            padding: 22px; font-size: 1.3rem; border-radius: 16px; cursor: pointer; 
+            font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.5); transition: 0.2s;
+        }
+        .menu-btn:active { transform: scale(0.98); background: #333; }
         
         .screen { display: none; }
-        .visible { display: block; }
-        .back-btn { background: none; border: none; color: #888; text-decoration: underline; margin-bottom: 15px; cursor: pointer; }
+        .visible { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        .exercise-card { background: var(--card); padding: 10px; margin-bottom: 15px; border-radius: 10px; border-right: 5px solid var(--accent); text-align: right; }
-        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .ex-name { font-weight: bold; font-size: 1.1rem; }
+        .back-btn { background: none; border: none; color: #888; font-size: 1rem; margin-bottom: 20px; cursor: pointer; padding: 10px; }
+
+        .exercise-card { 
+            background: var(--card); padding: 15px; margin-bottom: 20px; border-radius: 18px; 
+            text-align: right; border-right: 6px solid var(--accent); 
+        }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .ex-name { font-weight: 700; font-size: 1.2rem; letter-spacing: 0.5px; }
         
-        /* כפתור פלוס גדול */
         .add-row-btn {
-            background: #333; color: white; border: 1px solid #555;
-            width: 100%; padding: 8px; border-radius: 8px; margin-top: 5px; cursor: pointer;
+            background: #2c2c2e; color: var(--accent); border: 1px dashed var(--accent);
+            width: 100%; padding: 12px; border-radius: 10px; margin-top: 10px; cursor: pointer; font-weight: bold;
         }
 
-        /* שורת סט */
         .set-row { 
-            display: flex; gap: 8px; margin-bottom: 8px; align-items: center; 
-            background: rgba(255,255,255,0.05); padding: 8px; border-radius: 8px; 
-            transition: 0.3s;
+            display: flex; gap: 10px; margin-bottom: 10px; align-items: center; 
+            background: rgba(255,255,255,0.03); padding: 8px; border-radius: 10px; 
         }
+        .set-row.warmup-mode { border: 1px solid var(--warmup); background: rgba(255, 159, 10, 0.1); }
         
-        /* עיצוב שורת חימום */
-        .set-row.warmup-mode { 
-            border: 1px solid var(--warmup); 
-            background: rgba(255, 152, 0, 0.15); 
-        }
-        
-        /* כפתור החלפת סוג (סט/חימום) */
         .type-btn {
-            background: #444; color: #ccc; border: none; border-radius: 5px;
-            padding: 5px 10px; font-size: 0.8rem; cursor: pointer; width: 60px;
+            background: #444; color: #aaa; border: none; border-radius: 8px;
+            height: 40px; width: 60px; font-size: 0.8rem; font-weight: bold; cursor: pointer;
         }
-        .warmup-mode .type-btn {
-            background: var(--warmup); color: black; font-weight: bold;
-        }
+        .warmup-mode .type-btn { background: var(--warmup); color: black; }
 
-        input { background: var(--input); border: 1px solid #555; color: white; padding: 10px; width: 100%; border-radius: 5px; text-align: center; font-size: 1.1rem; }
-        input:focus { border-color: var(--accent); outline: none; }
+        input { 
+            background: var(--input); border: none; color: white; 
+            height: 40px; width: 100%; border-radius: 8px; text-align: center; 
+            font-size: 1.2rem; font-weight: 600; 
+        }
+        input:focus { outline: 2px solid var(--accent); background: black; }
         
-        .del-btn { background: none; border: none; color: #ff5252; font-size: 1.5rem; padding: 0 5px; cursor: pointer; }
+        .del-btn { background: none; border: none; color: var(--delete); font-size: 1.5rem; padding: 0 10px; cursor: pointer; }
 
         .save-btn { 
-            position: fixed; bottom: 20px; left: 5%; width: 90%; 
-            background: var(--accent); color: black; border: none; padding: 15px; 
-            font-size: 1.3rem; font-weight: bold; border-radius: 50px; 
-            box-shadow: 0 5px 20px rgba(0,0,0,0.5); cursor: pointer; z-index: 100;
+            position: fixed; bottom: 30px; left: 5%; width: 90%; 
+            background: var(--accent); color: black; border: none; padding: 18px; 
+            font-size: 1.4rem; font-weight: 800; border-radius: 60px; 
+            box-shadow: 0 10px 30px rgba(48, 209, 88, 0.3); cursor: pointer; z-index: 100;
+        }
+
+        #save-status {
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+            background: #333; color: white; padding: 10px 20px; border-radius: 30px;
+            font-size: 0.9rem; z-index: 200; display: none;
         }
     </style>
 </head>
 <body>
 
+    <div id="save-status">הודעת מערכת</div>
+
     <div id="home-screen" class="screen visible">
-        <h1>Gym Tracker V9 🛡️</h1>
+        <h1>Gym Tracker V10 🦍</h1>
         <div class="menu-grid">
             <button class="menu-btn" onclick="app.loadWorkout('legs')">🦵 רגליים</button>
             <button class="menu-btn" onclick="app.loadWorkout('push')">💪 חזה/כתפיים/יד אחורית</button>
             <button class="menu-btn" onclick="app.loadWorkout('pull')">🦍 גב/יד קדמית</button>
             <button class="menu-btn" style="border-color:orange; color:orange;" onclick="app.showHistory()">📜 היסטוריה</button>
         </div>
+        <p style="color:#555; font-size:0.8rem; margin-top:20px;">הנתונים נשמרים בטלפון ובענן במקביל</p>
     </div>
 
     <div id="workout-screen" class="screen">
-        <button class="back-btn" onclick="app.goHome()">חזרה לתפריט</button>
+        <button class="back-btn" onclick="app.goHome()">חזרה לתפריט ראשי</button>
         <h2 id="page-title">...</h2>
         <div id="exercises-list"></div>
         <button class="save-btn" onclick="app.save()">💾 שמור אימון</button>
     </div>
 
     <div id="history-screen" class="screen">
-        <button class="back-btn" onclick="app.goHome()">חזרה לתפריט</button>
+        <button class="back-btn" onclick="app.goHome()">חזרה לתפריט ראשי</button>
         <div id="history-content">טוען...</div>
     </div>
 
@@ -102,8 +115,7 @@
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
-        // שם חדש כדי שלא יתערבב עם הישן
-        const COLLECTION = "gym_v9_fixed"; 
+        const COLLECTION = "gym_v10_final"; 
 
         const EXERCISES = {
             'legs': { title: 'רגליים ובטן', list: [
@@ -127,6 +139,13 @@
         const app = {
             currentType: null,
 
+            showStatus: (msg) => {
+                const el = document.getElementById('save-status');
+                el.innerText = msg;
+                el.style.display = 'block';
+                setTimeout(() => el.style.display = 'none', 3000);
+            },
+
             goHome: () => {
                 document.querySelectorAll('.screen').forEach(el => el.classList.remove('visible'));
                 document.getElementById('home-screen').classList.add('visible');
@@ -140,13 +159,13 @@
                 document.getElementById('page-title').innerText = data.title;
                 
                 const container = document.getElementById('exercises-list');
-                container.innerHTML = '<div style="margin-top:20px;">טוען נתונים מהענן...</div>';
+                container.innerHTML = '<div style="margin-top:20px;">מסנכרן נתונים...</div>';
 
-                // שליפת היסטוריה
-                let history = {};
+                // 1. שליפת נתונים מהענן למילוי משקלים
+                let cloudData = {};
                 try {
                     const snap = await db.collection(COLLECTION).where('type','==',type).orderBy('date','desc').limit(1).get();
-                    if(!snap.empty) history = snap.docs[0].data().data || {};
+                    if(!snap.empty) cloudData = snap.docs[0].data().data || {};
                 } catch(e) { console.error(e); }
 
                 container.innerHTML = ''; 
@@ -161,14 +180,31 @@
                     `;
                     container.appendChild(card);
 
-                    // שחזור שורות - כולל ריקות!
-                    const savedRows = history[ex.id];
-                    if (savedRows && savedRows.length > 0) {
-                        savedRows.forEach(r => app.addRow(ex.id, r.w, r.r, r.isWarmup));
+                    // 2. קביעת מספר השורות: קודם כל מהטלפון (LocalStorage)
+                    // אם אין בטלפון, בודקים בענן. אם אין בענן, ברירת מחדל 3.
+                    let rowCount = localStorage.getItem(`rows_${ex.id}`);
+                    
+                    if (!rowCount) {
+                        // אם אין שמירה מקומית, נבדוק אם יש בענן
+                        if (cloudData[ex.id] && cloudData[ex.id].length > 0) {
+                            rowCount = cloudData[ex.id].length;
+                        } else {
+                            rowCount = 3; // ברירת מחדל להתחלה
+                        }
                     } else {
-                        // ברירת מחדל לאימון ראשון
-                        app.addRow(ex.id);
-                        app.addRow(ex.id);
+                        rowCount = parseInt(rowCount);
+                    }
+
+                    // 3. יצירת השורות ומילוי נתונים
+                    for (let i = 0; i < rowCount; i++) {
+                        // מנסים למלא נתונים מהאימון האחרון בענן
+                        let w = '', r = '', isWarmup = false;
+                        if (cloudData[ex.id] && cloudData[ex.id][i]) {
+                            w = cloudData[ex.id][i].w;
+                            r = cloudData[ex.id][i].r;
+                            isWarmup = cloudData[ex.id][i].isWarmup;
+                        }
+                        app.addRow(ex.id, w, r, isWarmup);
                     }
                 });
             },
@@ -177,9 +213,7 @@
                 const container = document.getElementById(`rows-${exId}`);
                 const row = document.createElement('div');
                 row.className = isWarmup ? 'set-row warmup-mode' : 'set-row';
-                
-                // כפתור מפורש שכתוב עליו מה המצב
-                const btnText = isWarmup ? '🔥 חימום' : '💪 סט';
+                const btnText = isWarmup ? '🔥' : '💪';
 
                 row.innerHTML = `
                     <button class="type-btn">${btnText}</button>
@@ -188,12 +222,12 @@
                     <button class="del-btn">×</button>
                 `;
 
-                // לוגיקה לשינוי סט/חימום
+                // החלפת מצב חימום/סט
                 const typeBtn = row.querySelector('.type-btn');
                 typeBtn.onclick = () => {
                     row.classList.toggle('warmup-mode');
-                    const isNowWarmup = row.classList.contains('warmup-mode');
-                    typeBtn.innerText = isNowWarmup ? '🔥 חימום' : '💪 סט';
+                    const isW = row.classList.contains('warmup-mode');
+                    typeBtn.innerText = isW ? '🔥' : '💪';
                 };
 
                 // מחיקה
@@ -204,27 +238,28 @@
 
             save: async () => {
                 const saveBtn = document.querySelector('.save-btn');
-                saveBtn.innerText = "שומר נתונים...";
+                saveBtn.innerText = "שומר...";
                 
                 const allData = {};
                 const typeData = EXERCISES[app.currentType];
 
-                // עובר על כל התרגילים
                 typeData.list.forEach(ex => {
                     const rowsDiv = document.getElementById(`rows-${ex.id}`);
                     const rows = rowsDiv.querySelectorAll('.set-row');
                     const exerciseRows = [];
 
+                    // א. שמירת מספר השורות בטלפון (זה התיקון הקריטי!)
+                    localStorage.setItem(`rows_${ex.id}`, rows.length);
+
+                    // ב. איסוף הנתונים לענן
                     rows.forEach(row => {
                         const w = row.querySelector('.inp-w').value;
                         const r = row.querySelector('.inp-r').value;
                         const isWarmup = row.classList.contains('warmup-mode');
-                        
-                        // *** התיקון הגדול: שומרים הכל! גם אם הכל ריק! ***
                         exerciseRows.push({ w: w, r: r, isWarmup: isWarmup });
                     });
 
-                    // שומרים למסד הנתונים אם יש שורות בכלל
+                    // שמירה לענן רק אם יש תוכן (אבל המבנה נשמר בטלפון בכל מקרה!)
                     if (exerciseRows.length > 0) {
                         allData[ex.id] = exerciseRows;
                     }
@@ -238,14 +273,15 @@
                     });
                     
                     confetti({ spread: 100, origin: { y: 0.8 } });
-                    saveBtn.innerText = "נשמר! ✅ נתראה באימון הבא";
+                    app.showStatus("המבנה נשמר בטלפון, הנתונים בענן ✅");
+                    saveBtn.innerText = "נשמר! ✅";
                     setTimeout(() => {
                         saveBtn.innerText = "💾 שמור אימון";
                         app.goHome();
-                    }, 2000);
+                    }, 1500);
 
                 } catch (e) {
-                    alert("שגיאה בשמירה: " + e.message);
+                    alert("שגיאה בשמירה לענן (אבל המבנה נשמר בטלפון): " + e.message);
                     saveBtn.innerText = "שגיאה ❌";
                 }
             },
@@ -273,8 +309,6 @@
                             const found = EXERCISES[t].list.find(e => e.id === eid);
                             if(found) name = found.n;
                         }
-
-                        // בהיסטוריה מציגים רק מה שבאמת נעשה (לא ריק)
                         const validRows = rows.filter(r => r.w && r.r).map(r => {
                             return r.isWarmup ? `[חימום ${r.w}x${r.r}]` : `${r.w}x${r.r}`;
                         });
@@ -285,8 +319,8 @@
                     }
 
                     const item = document.createElement('div');
-                    item.style = "background:#2d2d2d; margin-bottom:10px; padding:10px; border-radius:8px; text-align:right;";
-                    item.innerHTML = `<div style="color:#00e676; margin-bottom:5px;">${date} - ${title}</div>${details || 'ללא נתונים משמעותיים'}`;
+                    item.style = "background:#2c2c2e; margin-bottom:10px; padding:15px; border-radius:12px; text-align:right;";
+                    item.innerHTML = `<div style="color:#30d158; margin-bottom:5px; font-weight:bold;">${date} - ${title}</div>${details || 'ללא נתונים משמעותיים'}`;
                     content.appendChild(item);
                 });
             }
