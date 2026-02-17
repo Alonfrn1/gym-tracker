@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gym Tracker Pro V4 💪</title>
+    <title>Gym Tracker V6 (Fixed) 💪</title>
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -29,9 +29,8 @@
             padding: 20px; font-size: 1.1rem; font-weight: bold; border-radius: 15px;
             cursor: pointer; display: flex; align-items: center; justify-content: center;
         }
-        .menu-btn:active { transform: scale(0.96); background: var(--accent); color: black; }
-
-        .screen { display: none; max-width: 600px; margin: 0 auto; padding-bottom: 50px; }
+        
+        .screen { display: none; max-width: 600px; margin: 0 auto; padding-bottom: 80px; }
         .back-btn { background: none; border: none; color: #888; font-size: 0.9rem; margin-bottom: 15px; cursor: pointer; text-decoration: underline; }
         
         .exercise-card {
@@ -43,7 +42,8 @@
         
         .add-set-btn {
             background: var(--card); border: 1px solid var(--accent); color: var(--accent);
-            border-radius: 50%; width: 30px; height: 30px; font-size: 1.2rem; cursor: pointer;
+            border-radius: 50%; width: 35px; height: 35px; font-size: 1.5rem; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; padding-bottom: 5px;
         }
 
         .set-row { 
@@ -52,24 +52,20 @@
         }
         .set-row.warmup { border: 1px solid var(--warmup); background: rgba(255, 152, 0, 0.1); }
         
-        .set-label { font-size: 0.7rem; color: #aaa; width: 30px; }
-        .warmup-label { font-size: 0.7rem; color: var(--warmup); font-weight: bold; width: 40px; }
-
         input[type="number"] {
             background: var(--input-bg); border: 1px solid #444; color: white;
-            padding: 8px; border-radius: 5px; text-align: center; font-size: 0.9rem;
+            padding: 10px; border-radius: 5px; text-align: center; font-size: 1rem;
             width: 100%; box-sizing: border-box; flex: 1;
         }
         input:focus { border-color: var(--accent); outline: none; }
-        ::placeholder { color: #666; font-size: 0.8rem; }
         
-        .del-btn { background: none; border: none; color: #ff5252; cursor: pointer; font-size: 1.2rem; }
+        .del-btn { background: none; border: none; color: #ff5252; cursor: pointer; font-size: 1.5rem; padding: 0 10px; }
 
         .save-btn {
             background: var(--accent); color: black; border: none; width: 100%;
             padding: 15px; font-size: 1.2rem; font-weight: bold; border-radius: 50px;
-            margin-top: 20px; cursor: pointer; position: sticky; bottom: 10px; 
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            margin-top: 20px; cursor: pointer; position: fixed; bottom: 20px; left: 0; right: 0;
+            width: 90%; margin: 0 auto; box-shadow: 0 4px 20px rgba(0,0,0,0.5); max-width: 580px;
         }
 
         .history-item { 
@@ -77,8 +73,7 @@
             text-align: right; border-left: 3px solid #666; 
         }
         .history-date { font-size: 0.8rem; color: #888; margin-bottom: 5px; }
-        .history-type { font-weight: bold; color: var(--accent); margin-bottom: 10px; }
-        .history-detail { font-size: 0.85rem; color: #ccc; white-space: pre-wrap; line-height: 1.4; }
+        .history-detail { font-size: 0.9rem; color: #ccc; white-space: pre-wrap; line-height: 1.5; }
 
         select { padding: 12px; background: var(--card); color: white; border: 1px solid var(--accent); border-radius: 8px; width: 100%; margin-bottom: 20px; }
         canvas { background: var(--card); border-radius: 10px; padding: 5px; }
@@ -87,7 +82,7 @@
 <body>
 
     <div id="home-screen" class="screen" style="display:block;">
-        <h1>Gym Tracker V4 🏋️‍♂️</h1>
+        <h1>Gym Tracker V6 🏋️‍♂️</h1>
         <div class="menu-grid">
             <button class="menu-btn" onclick="openWorkout('legs')">🦵 רגליים ובטן</button>
             <button class="menu-btn" onclick="openWorkout('pull')">🦍 גב ויד קדמית</button>
@@ -105,7 +100,7 @@
 
     <div id="history-screen" class="screen">
         <button class="back-btn" onclick="goHome()">חזרה לתפריט</button>
-        <h3>📈 גרף התקדמות (כוח משוקלל)</h3>
+        <h3>📈 גרף התקדמות</h3>
         <select id="graph-select" onchange="renderGraph()"></select>
         <canvas id="progressChart"></canvas>
         <h3 style="margin-top:30px;">📜 היסטוריית אימונים</h3>
@@ -123,10 +118,9 @@
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
-        const COLLECTION = "gym_tracker_v4"; // גרסה חדשה לנתונים
+        const COLLECTION = "gym_tracker_v6"; // מסד נתונים חדש ונקי
 
-        // שיניתי את השמות כדי למנוע בעיות עם גרשיים
-        // השתמשתי ב-ID באנגלית (מפתח) ובשם תצוגה בעברית בנפרד
+        // שימוש במזהים באנגלית כדי למנוע בעיות, ושמות בעברית לתצוגה
         const workoutData = {
             'legs': { 
                 title: 'רגליים ובטן', 
@@ -153,11 +147,11 @@
             'push': { 
                 title: 'חזה, כתפיים ויד אחורית', 
                 exercises: [
-                    {id: 'bench_press', name: 'באנץ\''}, // הוספתי \ לפני הגרש בקוד
-                    {id: 'incline_bench', name: 'באנץ\' בשיפוע'},
+                    {id: 'bench_press', name: 'לחיצת חזה (בנץ)'}, 
+                    {id: 'incline_bench', name: 'חזה עליון (בנץ שיפוע)'},
                     {id: 'flys', name: 'פרפר'},
-                    {id: 'shoulders', name: 'כתפיים'},
-                    {id: 'lat_raise', name: 'פשיטת כתפיים'},
+                    {id: 'shoulders', name: 'לחיצת כתפיים'},
+                    {id: 'lat_raise', name: 'הרחקת כתפיים'},
                     {id: 'triceps', name: 'יד אחורית'},
                     {id: 'overhead_tri', name: 'יד אחורית מעל הראש'}
                 ]
@@ -178,59 +172,76 @@
             document.getElementById('workout-title').innerText = workoutData[type].title;
             
             const container = document.getElementById('exercises-container');
-            container.innerHTML = 'טוען נתונים מהאימון הקודם...';
+            container.innerHTML = 'טוען נתונים...';
 
             let lastExercises = {};
             try {
+                // מנסה לטעון את האימון האחרון מאותו סוג
                 const snapshot = await db.collection(COLLECTION).where('type', '==', type).orderBy('date', 'desc').limit(1).get();
                 if (!snapshot.empty) {
                     lastExercises = snapshot.docs[0].data().exercisesData || {};
                 }
-            } catch (e) { console.log("No previous data", e); }
+            } catch (e) { console.log("New User or Error", e); }
 
             container.innerHTML = '';
 
             workoutData[type].exercises.forEach(ex => {
                 const card = document.createElement('div');
                 card.className = 'exercise-card';
-                card.id = `card-${ex.id}`;
-
-                // שולחים את ה-ID (באנגלית) לפונקציה, ככה שום גרש לא ישבור את הקוד
+                // כפתור הפלוס מקבל את ה-ID בצורה ישירה ובטוחה
                 card.innerHTML = `
                     <div class="ex-header">
                         <span class="ex-title">${ex.name}</span>
-                        <button class="add-set-btn" onclick="addSetRow('${ex.id}', true)">+</button>
+                        <button class="add-set-btn" onclick="addSetRow('${ex.id}', '', '', false)">+</button>
                     </div>
                     <div id="sets-${ex.id}"></div>
                 `;
                 container.appendChild(card);
 
-                // שחזור סטים: אם אין היסטוריה, 2 שורות ריקות. אם יש - משחזר הכל כולל חימומים
-                const prevSets = lastExercises[ex.id] || [{ w: '', r: '', isWarmup: false }, { w: '', r: '', isWarmup: false }];
+                const prevSets = lastExercises[ex.id];
                 
-                prevSets.forEach(set => {
-                    addSetRow(ex.id, set.isWarmup, set.w, set.r);
-                });
+                // לוגיקה קריטית: אם יש היסטוריה, טען אותה בדיוק כמו שהיא.
+                if (prevSets && prevSets.length > 0) {
+                    prevSets.forEach(set => {
+                        addSetRow(ex.id, set.w, set.r, set.isWarmup);
+                    });
+                } else {
+                    // אם אין היסטוריה בכלל, שים 2 שורות ריקות להתחלה
+                    addSetRow(ex.id, '', '', false);
+                    addSetRow(ex.id, '', '', false);
+                }
             });
         }
 
-        function addSetRow(exId, isWarmup = false, weight = '', reps = '') {
+        // פונקציית הוספת שורה
+        function addSetRow(exId, weight = '', reps = '', isWarmup = false) {
             const container = document.getElementById(`sets-${exId}`);
             const row = document.createElement('div');
+            
             row.className = `set-row ${isWarmup ? 'warmup' : ''}`;
             
+            // המבנה של השורה
             row.innerHTML = `
-                ${isWarmup ? '<span class="warmup-label">🔥 חימום</span>' : '<span class="set-label">עבודה</span>'}
-                <input type="number" placeholder="משקל" class="inp-weight" value="${weight}">
+                <div style="display:flex; flex-direction:column; align-items:center; cursor:pointer; width:40px;" onclick="toggleWarmup(this)">
+                    <span style="font-size:1.2rem;">${isWarmup ? '🔥' : '💪'}</span>
+                    <span style="font-size:0.6rem;">${isWarmup ? 'חימום' : 'סט'}</span>
+                </div>
+                <input type="number" placeholder="קג" class="inp-weight" value="${weight}">
                 <input type="number" placeholder="חזרות" class="inp-reps" value="${reps}">
                 <button class="del-btn" onclick="this.parentElement.remove()">×</button>
             `;
 
-            if (isWarmup) {
-                container.prepend(row); 
-            } else {
-                container.appendChild(row);
-            }
+            container.appendChild(row);
+        }
+
+        function toggleWarmup(el) {
+            const row = el.parentElement;
+            row.classList.toggle('warmup');
+            const isWarmup = row.classList.contains('warmup');
+            el.innerHTML = `
+                <span style="font-size:1.2rem;">${isWarmup ? '🔥' : '💪'}</span>
+                <span style="font-size:0.6rem;">${isWarmup ? 'חימום' : 'סט'}</span>
+            `;
         }
 
         function saveWorkout() {
@@ -247,10 +258,11 @@
                     const r = row.querySelector('.inp-reps').value;
                     const isWarmup = row.classList.contains('warmup');
                     
-                    // שומרים גם אם ריק, כדי לשמור על מבנה הסטים לפעם הבאה!
+                    // שמירה: שומרים את השורה גם אם היא ריקה! זה מה ששומר על המבנה לפעם הבאה.
                     setsData.push({ w: w, r: r, isWarmup: isWarmup });
                 });
                 
+                // שומרים את התרגיל אם יש לו לפחות שורה אחת (אפילו ריקה)
                 if (setsData.length > 0) exercisesData[ex.id] = setsData;
             });
 
@@ -260,26 +272,22 @@
                 exercisesData: exercisesData
             }).then(() => {
                 confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-                alert("אימון נשמר! התחזקת 💪");
+                alert("האימון נשמר בהצלחה! המבנה יישמר לפעם הבאה.");
                 goHome();
-            }).catch(e => alert("שגיאה: " + e));
+            }).catch(e => alert("שגיאה בשמירה: " + e));
         }
 
+        // --- היסטוריה ---
         async function openHistory() {
             document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
             document.getElementById('history-screen').style.display = 'block';
             
             const select = document.getElementById('graph-select');
-            select.innerHTML = '<option value="">בחר תרגיל להצגה...</option>';
+            select.innerHTML = '<option value="">בחר תרגיל...</option>';
             
-            const allExercises = [];
-            Object.values(workoutData).forEach(cat => {
-                cat.exercises.forEach(ex => allExercises.push(ex));
-            });
-            
-            allExercises.sort((a,b) => a.name.localeCompare(b.name)).forEach(ex => {
-                select.innerHTML += `<option value="${ex.id}">${ex.name}</option>`;
-            });
+            const all = [];
+            Object.values(workoutData).forEach(cat => cat.exercises.forEach(e => all.push(e)));
+            all.forEach(e => select.innerHTML += `<option value="${e.id}">${e.name}</option>`);
 
             const list = document.getElementById('history-list');
             list.innerHTML = 'טוען...';
@@ -295,25 +303,23 @@
                 const dateStr = dateObj.toLocaleDateString('he-IL') + ' ' + dateObj.toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'});
                 
                 let details = "";
-                // מציאת השם בעברית לפי ה-ID
-                const findName = (id) => {
-                    for(let cat in workoutData) {
-                        const found = workoutData[cat].exercises.find(e => e.id === id);
-                        if(found) return found.name;
-                    }
-                    return id;
+                const getName = (id) => {
+                   const found = all.find(e => e.id === id);
+                   return found ? found.name : id;
                 };
 
                 for (const [exId, sets] of Object.entries(d.exercisesData)) {
-                    const workSets = sets.filter(s => !s.isWarmup && s.w > 0).map(s => `${s.w}x${s.r}`).join(', ');
-                    if(workSets) details += `${findName(exId)}: ${workSets}\n`;
+                    // בהיסטוריה מציגים רק מה שבאמת בוצע (שיש בו משקל וחזרות)
+                    const workSets = sets.filter(s => !s.isWarmup && s.w && s.r).map(s => `${s.w}x${s.r}`).join(', ');
+                    if(workSets) details += `• ${getName(exId)}: ${workSets}\n`;
                 }
+
+                if (!details) details = "רק חימום או ללא נתונים";
 
                 list.innerHTML += `
                     <div class="history-item">
-                        <div class="history-date">${dateStr}</div>
-                        <div class="history-type">${workoutData[d.type]?.title || d.type}</div>
-                        <div class="history-detail">${details || 'רק חימום / ללא נתונים'}</div>
+                        <div class="history-date">${dateStr} | ${workoutData[d.type]?.title}</div>
+                        <div class="history-detail">${details}</div>
                     </div>
                 `;
             });
@@ -322,14 +328,7 @@
         let myChart = null;
         async function renderGraph() {
             const exId = document.getElementById('graph-select').value;
-            if (!exId) return;
-
-            // מציאת השם בעברית לכותרת
-            let exName = exId;
-            for(let cat in workoutData) {
-                const found = workoutData[cat].exercises.find(e => e.id === exId);
-                if(found) exName = found.name;
-            }
+            if(!exId) return;
 
             const snapshot = await db.collection(COLLECTION).orderBy('date', 'asc').get();
             const labels = [];
@@ -337,52 +336,40 @@
 
             snapshot.forEach(doc => {
                 const d = doc.data();
-                if (d.exercisesData && d.exercisesData[exId]) {
-                    const sets = d.exercisesData[exId];
-                    let maxStrength = 0;
-                    sets.forEach(s => {
-                        const w = Number(s.w);
-                        const r = Number(s.r);
-                        if (!s.isWarmup && w > 0 && r > 0) {
-                            const strength = w * (1 + r / 30);
-                            if (strength > maxStrength) maxStrength = strength;
-                        }
+                if(d.exercisesData && d.exercisesData[exId]) {
+                    let maxVal = 0;
+                    d.exercisesData[exId].forEach(s => {
+                        const val = Number(s.w);
+                        if(!s.isWarmup && val > maxVal) maxVal = val;
                     });
-
-                    if (maxStrength > 0) {
-                        const dateObj = d.date.toDate();
-                        labels.push(dateObj.toLocaleDateString('he-IL', {day:'2-digit', month:'2-digit'}));
-                        dataPoints.push(Math.round(maxStrength));
+                    if(maxVal > 0) {
+                        labels.push(d.date.toDate().toLocaleDateString('he-IL'));
+                        dataPoints.push(maxVal);
                     }
                 }
             });
 
             const ctx = document.getElementById('progressChart').getContext('2d');
-            if (myChart) myChart.destroy();
-
+            if(myChart) myChart.destroy();
+            
             myChart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: `כוח משוקלל: ${exName}`,
+                        label: 'משקל עבודה מקסימלי (ק"ג)',
                         data: dataPoints,
                         borderColor: '#00e676',
                         backgroundColor: 'rgba(0, 230, 118, 0.1)',
-                        borderWidth: 3,
-                        pointBackgroundColor: '#fff',
-                        pointRadius: 5,
                         fill: true,
                         tension: 0.3
                     }]
                 },
                 options: {
-                    responsive: true,
                     scales: {
-                        y: { beginAtZero: false, grid: { color: '#333' }, ticks: { color: '#ccc' } },
-                        x: { grid: { color: '#333' }, ticks: { color: '#ccc' } }
-                    },
-                    plugins: { legend: { labels: { color: 'white' } } }
+                        y: { grid: { color: '#333' } },
+                        x: { grid: { color: '#333' } }
+                    }
                 }
             });
         }
