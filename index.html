@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gym Tracker Pro 3.0 💪</title>
+    <title>Gym Tracker Pro V4 💪</title>
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -13,9 +13,7 @@
     <style>
         :root {
             --bg: #121212; --card: #1e1e1e; --text: #e0e0e0; 
-            --accent: #00e676; /* ירוק */
-            --warmup: #ff9800; /* כתום לחימום */
-            --input-bg: #2c2c2c;
+            --accent: #00e676; --warmup: #ff9800; --input-bg: #2c2c2c;
         }
         body { 
             font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text);
@@ -23,26 +21,22 @@
             -webkit-tap-highlight-color: transparent;
         }
         
-        /* תפריט ראשי */
-        h1 { color: var(--accent); margin-bottom: 20px; letter-spacing: 1px; font-size: 1.8rem; }
+        h1 { color: var(--accent); margin-bottom: 20px; font-size: 1.8rem; }
         .menu-grid { display: grid; grid-template-columns: 1fr; gap: 15px; max-width: 500px; margin: 0 auto; }
         
         .menu-btn {
             background: var(--card); border: 2px solid var(--accent); color: white;
             padding: 20px; font-size: 1.1rem; font-weight: bold; border-radius: 15px;
-            cursor: pointer; transition: 0.2s; box-shadow: 0 4px 15px rgba(0,230,118,0.1);
-            display: flex; align-items: center; justify-content: center; gap: 10px;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
         }
         .menu-btn:active { transform: scale(0.96); background: var(--accent); color: black; }
 
-        /* מסכים פנימיים */
         .screen { display: none; max-width: 600px; margin: 0 auto; padding-bottom: 50px; }
         .back-btn { background: none; border: none; color: #888; font-size: 0.9rem; margin-bottom: 15px; cursor: pointer; text-decoration: underline; }
         
-        /* כרטיס תרגיל */
         .exercise-card {
             background: var(--card); padding: 10px; margin-bottom: 15px; border-radius: 12px;
-            text-align: right; border-right: 4px solid var(--accent); position: relative;
+            text-align: right; border-right: 4px solid var(--accent);
         }
         .ex-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         .ex-title { font-size: 1.1rem; font-weight: bold; color: white; }
@@ -50,17 +44,13 @@
         .add-set-btn {
             background: var(--card); border: 1px solid var(--accent); color: var(--accent);
             border-radius: 50%; width: 30px; height: 30px; font-size: 1.2rem; cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
         }
 
-        /* שורת סט */
         .set-row { 
             display: flex; gap: 8px; margin-bottom: 8px; align-items: center; 
             background: rgba(255,255,255,0.03); padding: 5px; border-radius: 5px;
         }
-        .set-row.warmup { 
-            border: 1px solid var(--warmup); background: rgba(255, 152, 0, 0.1); 
-        }
+        .set-row.warmup { border: 1px solid var(--warmup); background: rgba(255, 152, 0, 0.1); }
         
         .set-label { font-size: 0.7rem; color: #aaa; width: 30px; }
         .warmup-label { font-size: 0.7rem; color: var(--warmup); font-weight: bold; width: 40px; }
@@ -71,11 +61,9 @@
             width: 100%; box-sizing: border-box; flex: 1;
         }
         input:focus { border-color: var(--accent); outline: none; }
+        ::placeholder { color: #666; font-size: 0.8rem; }
         
-        /* placeholder styling */
-        ::placeholder { color: #666; opacity: 1; font-size: 0.8rem; }
-        
-        .del-btn { background: none; border: none; color: #ff5252; cursor: pointer; font-size: 1.2rem; padding: 0 5px; }
+        .del-btn { background: none; border: none; color: #ff5252; cursor: pointer; font-size: 1.2rem; }
 
         .save-btn {
             background: var(--accent); color: black; border: none; width: 100%;
@@ -84,7 +72,6 @@
             box-shadow: 0 4px 20px rgba(0,0,0,0.5);
         }
 
-        /* היסטוריה וגרפים */
         .history-item { 
             background: var(--card); padding: 15px; margin-bottom: 10px; border-radius: 10px; 
             text-align: right; border-left: 3px solid #666; 
@@ -93,18 +80,14 @@
         .history-type { font-weight: bold; color: var(--accent); margin-bottom: 10px; }
         .history-detail { font-size: 0.85rem; color: #ccc; white-space: pre-wrap; line-height: 1.4; }
 
-        select { 
-            padding: 12px; background: var(--card); color: white; border: 1px solid var(--accent); 
-            border-radius: 8px; width: 100%; margin-bottom: 20px; font-size: 1rem;
-        }
+        select { padding: 12px; background: var(--card); color: white; border: 1px solid var(--accent); border-radius: 8px; width: 100%; margin-bottom: 20px; }
         canvas { background: var(--card); border-radius: 10px; padding: 5px; }
-
     </style>
 </head>
 <body>
 
     <div id="home-screen" class="screen" style="display:block;">
-        <h1>Gym Tracker Pro 3.0 🏋️‍♂️</h1>
+        <h1>Gym Tracker V4 🏋️‍♂️</h1>
         <div class="menu-grid">
             <button class="menu-btn" onclick="openWorkout('legs')">🦵 רגליים ובטן</button>
             <button class="menu-btn" onclick="openWorkout('pull')">🦍 גב ויד קדמית</button>
@@ -122,11 +105,9 @@
 
     <div id="history-screen" class="screen">
         <button class="back-btn" onclick="goHome()">חזרה לתפריט</button>
-        
         <h3>📈 גרף התקדמות (כוח משוקלל)</h3>
         <select id="graph-select" onchange="renderGraph()"></select>
         <canvas id="progressChart"></canvas>
-        
         <h3 style="margin-top:30px;">📜 היסטוריית אימונים</h3>
         <div id="history-list"></div>
     </div>
@@ -142,21 +123,44 @@
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
-        const COLLECTION = "gym_tracker_v3"; // גרסה חדשה
+        const COLLECTION = "gym_tracker_v4"; // גרסה חדשה לנתונים
 
-        // --- רשימת התרגילים המעודכנת ---
+        // שיניתי את השמות כדי למנוע בעיות עם גרשיים
+        // השתמשתי ב-ID באנגלית (מפתח) ובשם תצוגה בעברית בנפרד
         const workoutData = {
             'legs': { 
                 title: 'רגליים ובטן', 
-                exercises: ['סקוואט', 'כפיפת ברכיים', 'פשיטת ברכיים', 'עליות תאומים', 'כפיפות בטן', 'הרמות רגליים'] 
+                exercises: [
+                    {id: 'squat', name: 'סקוואט'},
+                    {id: 'leg_curl', name: 'כפיפת ברכיים'},
+                    {id: 'leg_ext', name: 'פשיטת ברכיים'},
+                    {id: 'calves', name: 'עליות תאומים'},
+                    {id: 'abs', name: 'כפיפות בטן'},
+                    {id: 'leg_raise', name: 'הרמות רגליים'}
+                ]
             },
             'pull': { 
                 title: 'גב ויד קדמית', 
-                exercises: ['מתח', 'מתח עילי', 'חתירה בכיסא', 'כתף אחורית', 'כפיפה במרפק', 'פטישים באלכסון'] 
+                exercises: [
+                    {id: 'pullups', name: 'מתח'},
+                    {id: 'chinup', name: 'מתח עילי'},
+                    {id: 'row_seated', name: 'חתירה בכיסא'},
+                    {id: 'rear_delt', name: 'כתף אחורית'},
+                    {id: 'bicep_curl', name: 'כפיפה במרפק'},
+                    {id: 'hammer_curl', name: 'פטישים באלכסון'}
+                ]
             },
             'push': { 
                 title: 'חזה, כתפיים ויד אחורית', 
-                exercises: ['באנץ\'', 'באנץ\' בשיפוע', 'פרפר', 'כתפיים', 'פשיטת כתפיים', 'יד אחורית', 'יד אחורית מעל הראש'] 
+                exercises: [
+                    {id: 'bench_press', name: 'באנץ\''}, // הוספתי \ לפני הגרש בקוד
+                    {id: 'incline_bench', name: 'באנץ\' בשיפוע'},
+                    {id: 'flys', name: 'פרפר'},
+                    {id: 'shoulders', name: 'כתפיים'},
+                    {id: 'lat_raise', name: 'פשיטת כתפיים'},
+                    {id: 'triceps', name: 'יד אחורית'},
+                    {id: 'overhead_tri', name: 'יד אחורית מעל הראש'}
+                ]
             }
         };
 
@@ -167,7 +171,6 @@
             document.getElementById('home-screen').style.display = 'block';
         }
 
-        // --- פתיחת אימון ---
         async function openWorkout(type) {
             currentWorkoutType = type;
             document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
@@ -177,7 +180,6 @@
             const container = document.getElementById('exercises-container');
             container.innerHTML = 'טוען נתונים מהאימון הקודם...';
 
-            // שליפת אימון אחרון לזיכרון שריר
             let lastExercises = {};
             try {
                 const snapshot = await db.collection(COLLECTION).where('type', '==', type).orderBy('date', 'desc').limit(1).get();
@@ -188,39 +190,35 @@
 
             container.innerHTML = '';
 
-            workoutData[type].exercises.forEach(exName => {
-                // יצירת כרטיס תרגיל
+            workoutData[type].exercises.forEach(ex => {
                 const card = document.createElement('div');
                 card.className = 'exercise-card';
-                card.id = `card-${exName}`;
+                card.id = `card-${ex.id}`;
 
-                // כותרת וכפתור פלוס
+                // שולחים את ה-ID (באנגלית) לפונקציה, ככה שום גרש לא ישבור את הקוד
                 card.innerHTML = `
                     <div class="ex-header">
-                        <span class="ex-title">${exName}</span>
-                        <button class="add-set-btn" onclick="addSetRow('${exName}', true)">+</button>
+                        <span class="ex-title">${ex.name}</span>
+                        <button class="add-set-btn" onclick="addSetRow('${ex.id}', true)">+</button>
                     </div>
-                    <div id="sets-${exName}"></div>
+                    <div id="sets-${ex.id}"></div>
                 `;
                 container.appendChild(card);
 
-                // מילוי סטים
-                const prevSets = lastExercises[exName] || [{ w: '', r: '', isWarmup: false }, { w: '', r: '', isWarmup: false }];
+                // שחזור סטים: אם אין היסטוריה, 2 שורות ריקות. אם יש - משחזר הכל כולל חימומים
+                const prevSets = lastExercises[ex.id] || [{ w: '', r: '', isWarmup: false }, { w: '', r: '', isWarmup: false }];
                 
-                // אם אין היסטוריה, ניצור 2 שורות ריקות. אם יש, נשחזר.
                 prevSets.forEach(set => {
-                    addSetRow(exName, set.isWarmup, set.w, set.r);
+                    addSetRow(ex.id, set.isWarmup, set.w, set.r);
                 });
             });
         }
 
-        // --- הוספת שורת סט (לוגיקה) ---
-        function addSetRow(exName, isWarmup = false, weight = '', reps = '') {
-            const container = document.getElementById(`sets-${exName}`);
+        function addSetRow(exId, isWarmup = false, weight = '', reps = '') {
+            const container = document.getElementById(`sets-${exId}`);
             const row = document.createElement('div');
             row.className = `set-row ${isWarmup ? 'warmup' : ''}`;
             
-            // כאן השינוי: הכנסת הכיתוב "משקל" ו"חזרות" לתוך ה-placeholder
             row.innerHTML = `
                 ${isWarmup ? '<span class="warmup-label">🔥 חימום</span>' : '<span class="set-label">עבודה</span>'}
                 <input type="number" placeholder="משקל" class="inp-weight" value="${weight}">
@@ -229,33 +227,31 @@
             `;
 
             if (isWarmup) {
-                container.prepend(row); // חימום תמיד למעלה
+                container.prepend(row); 
             } else {
-                container.appendChild(row); // עבודה למטה
+                container.appendChild(row);
             }
         }
 
-        // --- שמירה ---
         function saveWorkout() {
             const exercisesData = {};
             const exerciseList = workoutData[currentWorkoutType].exercises;
             
-            exerciseList.forEach(exName => {
-                const setsDiv = document.getElementById(`sets-${exName}`);
+            exerciseList.forEach(ex => {
+                const setsDiv = document.getElementById(`sets-${ex.id}`);
                 const rows = setsDiv.querySelectorAll('.set-row');
                 const setsData = [];
                 
                 rows.forEach(row => {
-                    const w = Number(row.querySelector('.inp-weight').value);
-                    const r = Number(row.querySelector('.inp-reps').value);
+                    const w = row.querySelector('.inp-weight').value;
+                    const r = row.querySelector('.inp-reps').value;
                     const isWarmup = row.classList.contains('warmup');
                     
-                    if (w > 0 || r > 0) { // שומרים רק אם הוזן משהו
-                        setsData.push({ w, r, isWarmup });
-                    }
+                    // שומרים גם אם ריק, כדי לשמור על מבנה הסטים לפעם הבאה!
+                    setsData.push({ w: w, r: r, isWarmup: isWarmup });
                 });
                 
-                if (setsData.length > 0) exercisesData[exName] = setsData;
+                if (setsData.length > 0) exercisesData[ex.id] = setsData;
             });
 
             db.collection(COLLECTION).add({
@@ -269,22 +265,22 @@
             }).catch(e => alert("שגיאה: " + e));
         }
 
-        // --- היסטוריה וגרפים ---
         async function openHistory() {
             document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
             document.getElementById('history-screen').style.display = 'block';
             
-            // טעינת רשימת תרגילים לגרף
             const select = document.getElementById('graph-select');
             select.innerHTML = '<option value="">בחר תרגיל להצגה...</option>';
-            const allExercises = [
-                ...workoutData['legs'].exercises,
-                ...workoutData['push'].exercises,
-                ...workoutData['pull'].exercises
-            ].sort();
-            allExercises.forEach(ex => select.innerHTML += `<option value="${ex}">${ex}</option>`);
+            
+            const allExercises = [];
+            Object.values(workoutData).forEach(cat => {
+                cat.exercises.forEach(ex => allExercises.push(ex));
+            });
+            
+            allExercises.sort((a,b) => a.name.localeCompare(b.name)).forEach(ex => {
+                select.innerHTML += `<option value="${ex.id}">${ex.name}</option>`;
+            });
 
-            // טעינת היסטוריה
             const list = document.getElementById('history-list');
             list.innerHTML = 'טוען...';
             
@@ -299,10 +295,18 @@
                 const dateStr = dateObj.toLocaleDateString('he-IL') + ' ' + dateObj.toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'});
                 
                 let details = "";
-                for (const [exName, sets] of Object.entries(d.exercisesData)) {
-                    // מציג רק סטים של עבודה בפירוט כדי לא לחפור
-                    const workSets = sets.filter(s => !s.isWarmup).map(s => `${s.w}x${s.r}`).join(', ');
-                    if(workSets) details += `${exName}: ${workSets}\n`;
+                // מציאת השם בעברית לפי ה-ID
+                const findName = (id) => {
+                    for(let cat in workoutData) {
+                        const found = workoutData[cat].exercises.find(e => e.id === id);
+                        if(found) return found.name;
+                    }
+                    return id;
+                };
+
+                for (const [exId, sets] of Object.entries(d.exercisesData)) {
+                    const workSets = sets.filter(s => !s.isWarmup && s.w > 0).map(s => `${s.w}x${s.r}`).join(', ');
+                    if(workSets) details += `${findName(exId)}: ${workSets}\n`;
                 }
 
                 list.innerHTML += `
@@ -315,12 +319,17 @@
             });
         }
 
-        // --- לוגיקת גרף (1RM משוקלל) ---
         let myChart = null;
-
         async function renderGraph() {
-            const exName = document.getElementById('graph-select').value;
-            if (!exName) return;
+            const exId = document.getElementById('graph-select').value;
+            if (!exId) return;
+
+            // מציאת השם בעברית לכותרת
+            let exName = exId;
+            for(let cat in workoutData) {
+                const found = workoutData[cat].exercises.find(e => e.id === exId);
+                if(found) exName = found.name;
+            }
 
             const snapshot = await db.collection(COLLECTION).orderBy('date', 'asc').get();
             const labels = [];
@@ -328,13 +337,14 @@
 
             snapshot.forEach(doc => {
                 const d = doc.data();
-                if (d.exercisesData && d.exercisesData[exName]) {
-                    const sets = d.exercisesData[exName];
-                    
+                if (d.exercisesData && d.exercisesData[exId]) {
+                    const sets = d.exercisesData[exId];
                     let maxStrength = 0;
                     sets.forEach(s => {
-                        if (!s.isWarmup && s.w > 0 && s.r > 0) {
-                            const strength = s.w * (1 + s.r / 30);
+                        const w = Number(s.w);
+                        const r = Number(s.r);
+                        if (!s.isWarmup && w > 0 && r > 0) {
+                            const strength = w * (1 + r / 30);
                             if (strength > maxStrength) maxStrength = strength;
                         }
                     });
@@ -355,7 +365,7 @@
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: `כוח משוקלל (1RM): ${exName}`,
+                        label: `כוח משוקלל: ${exName}`,
                         data: dataPoints,
                         borderColor: '#00e676',
                         backgroundColor: 'rgba(0, 230, 118, 0.1)',
