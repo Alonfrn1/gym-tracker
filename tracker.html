@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gym Tracker V13 (Structure) 🏗️</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    
+    <style>
+        :root { --bg: #000; --card: #1c1c1e; --text: #fff; --accent: #30d158; --warmup: #ff9f0a; --del: #ff453a; }
+        body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; text-align: center; padding-bottom: 150px; }
+        
+        /* כרטיס תרגיל */
+        .exercise-card { background: var(--card); padding: 15px; margin-bottom: 20px; border-radius: 16px; border-right: 6px solid var(--accent); text-align: right; }
+        .ex-title { font-size: 1.3rem; font-weight: bold; margin-bottom: 10px; display: block; }
+        
+        /* שורות */
+        .set-row { 
+            display: flex; gap: 8px; margin-bottom: 8px; align-items: center; 
+            background: rgba(255,255,255,0.05); padding: 8px; border-radius: 8px; 
+            transition: 0.2s;
+        }
+        
+        /* עיצוב מיוחד לחימום */
+        .set-row.is-warmup { 
+            background: rgba(255, 159, 10, 0.15); 
+            border: 1px solid rgba(255, 159, 10, 0.3);
+        }
+        
+        .set-badge { 
+            width: 50px; font-size: 0.8rem; font-weight: bold; text-align: center; 
+            padding: 5px; border-radius: 5px; background: #333; color: #888; cursor: pointer;
+        }
+        .is-warmup .set-badge { background: var(--warmup); color: black; }
+
+        input { 
+            background: #2c2c2e; border: none; color: white; 
+            padding: 10px; border-radius: 8px; width: 100%; text-align: center; font-size: 1.2rem; 
+        }
+        input:focus { outline: 2px solid var(--accent); background: black; }
+
+        /* כפתורי הוספה ומחיקה */
+        .actions-row { display: flex; gap: 10px; margin-top: 10px; }
+        .add-btn { 
+            flex: 1; padding: 10px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; font-size: 0.9rem;
+        }
+        .btn-warmup { background: rgba(255, 159, 10, 0.2); color: var(--warmup); border: 1px dashed var(--warmup); }
+        .btn-set { background: rgba(48, 209, 88, 0.2); color: var(--accent); border: 1px dashed var(--accent); }
+        
+        .del-btn { background: none; border: none; color: var(--del); font-size: 1.5rem; padding: 0 5px; cursor: pointer; }
+
+        /* כפתור שמירה */
+        .save-btn { 
+            position: fixed; bottom: 30px; left: 5%; width: 90%; 
+            background: var(--accent); color: black; padding: 18px; 
+            font-size: 1.4rem; font-weight: 800; border-radius: 60px; border: none; 
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5); z-index: 100;
+        }
+
+        /* תפריט */
+        .screen { display: none; }
+        .visible { display: block; }
+        .menu-btn { display: block; width: 100%; background: var(--card); border: 1px solid #333; color: white; padding: 20px; font-size: 1.3rem; margin-bottom: 15px; border-radius: 15px; }
+    </style>
+</head>
+<body>
+
+    <div id="home-screen" class="screen visible">
+        <h1 style="color:var(--accent)">Gym Tracker V13 🏗️</h1>
+        <p style="color:#777;">המבנה נשמר בטלפון. הנתונים בענן.</p>
+        <button class="menu-btn" onclick="app.load('legs')">🦵 רגליים</button>
+        <button class="menu-btn" onclick="app.load('push')">💪 חזה/כתפיים/יד אחורית</button>
+        <button class="menu-btn" onclick="app.load('pull')">🦍 גב/יד קדמית</button>
+    </div>
+
+    <div id="workout-screen" class="screen">
+        <button onclick="location.reload()" style="background:none; border:none; color:#888; margin-bottom:20px; text-decoration:underline;">חזרה לתפריט</button>
+        <h2 id="page-title">...</h2>
+        <div id="container"></div>
+        <button class="save-btn" onclick="app.save()">💾 שמור אימון</button>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+          apiKey: "AIzaSyBR9taEgDlp4CaFa1oDlA2wM9ENoZD2V9U",
+          authDomain: "nano-banana-gallery-4e291.firebaseapp.com",
+          projectId: "nano-banana-gallery-4e291",
+          storageBucket: "nano-banana-gallery-4e291.firebasestorage.app",
+          messagingSenderId: "843216131791",
+          appId: "1:843216131791:web:e63ec1ab2f70b0808dc9ba"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const COLLECTION = "gym_v13_structure"; 
+
+        const EXERCISES = {
+            'legs': { title: 'רגליים ובטן', list: [
+                {id:'squat', n:'סקוואט'}, {id:'leg_curl', n:'כפיפת ברכיים'}, 
+                {id:'leg_ext', n:'פשיטת ברכיים'}, {id:'calves', n:'תאומים'}, {id:'abs', n:'בטן'}
+            ]},
+            'push': { title: 'חזה וכתפיים', list: [
+                {id:'bench', n:'לחיצת חזה'}, {id:'incline', n:'חזה עליון'}, 
+                {id:'flys', n:'פרפר'}, {id:'press', n:'לחיצת כתפיים'}, {id:'tri', n:'יד אחורית'}
+            ]},
+            'pull': { title: 'גב ויד קדמית', list: [
+                {id:'pullups', n:'מתח'}, {id:'row', n:'חתירה'}, 
+                {id:'curl', n:'כפיפת מרפקים'}, {id:'hammer', n:'פטישים'}
+            ]}
+        };
+
+        const app = {
+            currentType: null,
+            cloudData: {},
+
+            load: async (type) => {
+                app.currentType = type;
+                document.getElementById('home-screen').classList.remove('visible');
+                document.getElementById('workout-screen').classList.add('visible');
+                document.getElementById('page-title').innerText = EXERCISES[type].title;
+                const container = document.getElementById('container');
+                
+                // 1. ציור ראשוני מהיר (לפני שהענן עונה)
+                container.innerHTML = '';
+                app.renderSkeleton(type);
+
+                // 2. הבאת נתונים מהענן (משקלים)
+                try {
+                    const snap = await db.collection(COLLECTION).where('type','==',type).orderBy('date','desc').limit(1).get();
+                    if(!snap.empty) {
+                        app.cloudData = snap.docs[0].data().data;
+                        // עדכון המספרים בתוך הקוביות הקיימות
+                        app.fillDataValues(type);
+                    }
+                } catch(e) { console.error(e); }
+            },
+
+            renderSkeleton: (type) => {
+                const container = document.getElementById('container');
+                EXERCISES[type].list.forEach(ex => {
+                    const card = document.createElement('div');
+                    card.className = 'exercise-card';
+                    card.innerHTML = `<span class="ex-title">${ex.n}</span><div id="rows-${ex.id}"></div>`;
+                    
+                    // כפתורי הוספה
+                    const actions = document.createElement('div');
+                    actions.className = 'actions-row';
+                    actions.innerHTML = `
+                        <button class="add-btn btn-warmup" onclick="app.addRow('${ex.id}', 'warmup')">+ חימום</button>
+                        <button class="add-btn btn-set" onclick="app.addRow('${ex.id}', 'normal')">+ סט עבודה</button>
+                    `;
+                    card.appendChild(actions);
+                    container.appendChild(card);
+
+                    // שליפת המבנה מהזיכרון המקומי
+                    // מבנה נשמר כרשימה של מחרוזות: ['warmup', 'warmup', 'normal', 'normal']
+                    let structure = JSON.parse(localStorage.getItem(`struct_${ex.id}`));
+                    
+                    // ברירת מחדל אם אין זיכרון: 3 סטים רגילים
+                    if (!structure) structure = ['normal', 'normal', 'normal'];
+
+                    // ציור השורות לפי המבנה
+                    structure.forEach((type, index) => {
+                        app.renderRowHTML(ex.id, type, index);
+                    });
+                });
+            },
+
+            renderRowHTML: (exId, type, index, w='', r='') => {
+                const container = document.getElementById(`rows-${exId}`);
+                const row = document.createElement('div');
+                const isWarmup = type === 'warmup';
+                row.className = isWarmup ? 'set-row is-warmup' : 'set-row';
+                row.dataset.type = type; // שומרים את הסוג ב-HTML
+
+                row.innerHTML = `
+                    <div class="set-badge" onclick="app.toggleType(this, '${exId}')">
+                        ${isWarmup ? 'חימום' : (index+1)}
+                    </div>
+                    <input type="number" placeholder="קג" class="inp-w" value="${w}">
+                    <input type="number" placeholder="חזרות" class="inp-r" value="${r}">
+                    <button class="del-btn" onclick="app.removeRow(this, '${exId}')">×</button>
+                `;
+                container.appendChild(row);
+            },
+
+            fillDataValues: (type) => {
+                // עובר על כל התרגילים וממלא מספרים אם יש בענן
+                EXERCISES[type].list.forEach(ex => {
+                    if (!app.cloudData[ex.id]) return;
+                    
+                    const rows = document.getElementById(`rows-${ex.id}`).children;
+                    const savedData = app.cloudData[ex.id]; // מערך נתונים מהענן
+
+                    // ממלאים לפי הסדר, כמה שיש
+                    for (let i = 0; i < rows.length && i < savedData.length; i++) {
+                        rows[i].querySelector('.inp-w').value = savedData[i].w || '';
+                        rows[i].querySelector('.inp-r').value = savedData[i].r || '';
+                    }
+                });
+            },
+
+            // --- פעולות שמשנות את הזיכרון המקומי (לנצח) ---
+
+            updateLocalStorage: (exId) => {
+                const container = document.getElementById(`rows-${exId}`);
+                const structure = [];
+                Array.from(container.children).forEach((row, idx) => {
+                    structure.push(row.dataset.type);
+                    // עדכון המספרים בצד (רק לסטים רגילים)
+                    if (row.dataset.type === 'normal') {
+                        // צריך לחשב איזה מספר סט זה (מדלגים על חימום)
+                        let normalCount = 0;
+                        for(let i=0; i<=idx; i++) {
+                            if (container.children[i].dataset.type === 'normal') normalCount++;
+                        }
+                        row.querySelector('.set-badge').innerText = normalCount;
+                    }
+                });
+                localStorage.setItem(`struct_${exId}`, JSON.stringify(structure));
+            },
+
+            addRow: (exId, type) => {
+                const container = document.getElementById(`rows-${exId}`);
+                // אינדקס זמני, יסתדר ב-updateLocalStorage
+                app.renderRowHTML(exId, type, container.children.length); 
+                app.updateLocalStorage(exId);
+            },
+
+            removeRow: (btn, exId) => {
+                btn.parentElement.remove();
+                app.updateLocalStorage(exId);
+            },
+
+            toggleType: (badge, exId) => {
+                const row = badge.parentElement;
+                const currentType = row.dataset.type;
+                const newType = currentType === 'warmup' ? 'normal' : 'warmup';
+                
+                row.dataset.type = newType;
+                if (newType === 'warmup') {
+                    row.classList.add('is-warmup');
+                    badge.innerText = 'חימום';
+                } else {
+                    row.classList.remove('is-warmup');
+                }
+                app.updateLocalStorage(exId);
+            },
+
+            save: async () => {
+                const btn = document.querySelector('.save-btn');
+                btn.innerText = "שומר...";
+                
+                const allData = {};
+                EXERCISES[app.currentType].list.forEach(ex => {
+                    const rows = document.getElementById(`rows-${ex.id}`).querySelectorAll('.set-row');
+                    const exData = [];
+                    rows.forEach(row => {
+                        exData.push({
+                            w: row.querySelector('.inp-w').value,
+                            r: row.querySelector('.inp-r').value
+                        });
+                    });
+                    if (exData.length > 0) allData[ex.id] = exData;
+                });
+
+                try {
+                    await db.collection(COLLECTION).add({
+                        type: app.currentType,
+                        date: firebase.firestore.FieldValue.serverTimestamp(),
+                        data: allData
+                    });
+                    btn.innerText = "נשמר! ✅";
+                    setTimeout(() => { location.reload(); }, 1500);
+                } catch(e) {
+                    alert("שגיאה: " + e.message);
+                    btn.innerText = "שגיאה";
+                }
+            }
+        };
+    </script>
+</body>
+</html>
