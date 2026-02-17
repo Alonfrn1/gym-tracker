@@ -3,78 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gym Tracker V14 (Safe Mode) 🛡️</title>
+    <title>Gym Tracker V17 (Full Memory) 🧠</title>
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     
     <style>
-        :root { --bg: #000; --card: #1c1c1e; --text: #fff; --accent: #30d158; --warmup: #ff9f0a; --del: #ff453a; }
-        body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; text-align: center; padding-bottom: 150px; }
+        :root { --bg: #000; --card: #1c1c1e; --text: #fff; --accent: #00e676; --warmup: #ff9100; --del: #ff5252; }
+        body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; text-align: center; padding-bottom: 120px; }
         
-        /* קופסת שגיאות */
-        #error-box { 
-            display: none; background: #330000; color: #ffcccc; border: 1px solid red; 
-            padding: 10px; margin-bottom: 20px; text-align: left; direction: ltr; font-size: 0.8rem; 
+        .screen { display: none; }
+        .visible { display: block; }
+        
+        h1 { color: var(--accent); margin-bottom: 20px; }
+        
+        .menu-btn { 
+            display: block; width: 100%; background: var(--card); border: 1px solid #333; 
+            color: white; padding: 25px; font-size: 1.5rem; margin-bottom: 15px; border-radius: 15px; cursor: pointer;
         }
 
-        /* כרטיס תרגיל */
         .exercise-card { background: var(--card); padding: 15px; margin-bottom: 20px; border-radius: 16px; border-right: 6px solid var(--accent); text-align: right; }
-        .ex-title { font-size: 1.3rem; font-weight: bold; margin-bottom: 10px; display: block; }
+        .ex-title { font-size: 1.4rem; font-weight: bold; margin-bottom: 15px; display: block; }
         
-        /* שורות */
         .set-row { 
-            display: flex; gap: 8px; margin-bottom: 8px; align-items: center; 
-            background: rgba(255,255,255,0.05); padding: 8px; border-radius: 8px; 
+            display: flex; gap: 10px; margin-bottom: 10px; align-items: center; 
+            background: #2c2c2e; padding: 10px; border-radius: 10px; 
         }
         
         .set-row.is-warmup { 
-            background: rgba(255, 159, 10, 0.15); 
-            border: 1px solid rgba(255, 159, 10, 0.3);
+            background: rgba(255, 145, 0, 0.15); border: 1px solid var(--warmup); 
         }
-        
-        .set-badge { 
-            width: 60px; font-size: 0.8rem; font-weight: bold; text-align: center; 
-            padding: 10px 5px; border-radius: 5px; background: #333; color: #888; cursor: pointer;
+
+        .type-badge { 
+            background: #444; color: #aaa; padding: 10px; border-radius: 8px; 
+            width: 60px; text-align: center; font-weight: bold; font-size: 0.9rem; cursor: pointer;
         }
-        .is-warmup .set-badge { background: var(--warmup); color: black; }
+        .is-warmup .type-badge { background: var(--warmup); color: black; }
 
         input { 
-            background: #2c2c2e; border: none; color: white; 
-            padding: 10px; border-radius: 8px; width: 100%; text-align: center; font-size: 1.2rem; 
+            background: #000; border: 1px solid #444; color: white; 
+            padding: 12px; border-radius: 8px; width: 100%; text-align: center; font-size: 1.2rem; 
         }
-        input:focus { outline: 2px solid var(--accent); background: black; }
+        input:focus { border-color: var(--accent); outline: none; }
 
-        /* כפתורי פעולה */
+        .del-btn { background: none; border: none; color: var(--del); font-size: 1.8rem; padding: 0 10px; cursor: pointer; }
+        
         .add-btn { 
-            width: 100%; padding: 12px; border-radius: 8px; border: 1px dashed #555; 
-            background: #222; color: #aaa; cursor: pointer; margin-top: 10px; font-weight: bold;
+            width: 100%; padding: 12px; background: #333; color: var(--accent); 
+            border: 1px dashed var(--accent); border-radius: 8px; margin-top: 10px; 
+            cursor: pointer; font-weight: bold; font-size: 1rem;
         }
-        .del-btn { background: none; border: none; color: var(--del); font-size: 1.5rem; padding: 0 5px; cursor: pointer; }
 
-        /* כפתור שמירה */
         .save-btn { 
             position: fixed; bottom: 30px; left: 5%; width: 90%; 
             background: var(--accent); color: black; padding: 18px; 
-            font-size: 1.4rem; font-weight: 800; border-radius: 60px; border: none; 
-            box-shadow: 0 5px 20px rgba(0,0,0,0.5); z-index: 100;
+            font-size: 1.5rem; font-weight: 800; border-radius: 60px; border: none; 
+            box-shadow: 0 0 20px rgba(0,230,118,0.5); cursor: pointer; z-index: 100;
         }
-
-        .screen { display: none; }
-        .visible { display: block; }
-        .menu-btn { display: block; width: 100%; background: var(--card); border: 1px solid #333; color: white; padding: 20px; font-size: 1.3rem; margin-bottom: 15px; border-radius: 15px; }
     </style>
 </head>
 <body>
 
-    <div id="error-box"></div>
-
     <div id="home-screen" class="screen visible">
-        <h1 style="color:var(--accent)">Gym Tracker V14 🛡️</h1>
+        <h1>Gym Tracker V17 🧠</h1>
+        <p style="color:#777;">זוכר הכל: מבנה, משקלים וחזרות.</p>
         <button class="menu-btn" onclick="app.load('legs')">🦵 רגליים</button>
         <button class="menu-btn" onclick="app.load('push')">💪 חזה/כתפיים/יד אחורית</button>
         <button class="menu-btn" onclick="app.load('pull')">🦍 גב/יד קדמית</button>
-        <button onclick="localStorage.clear(); location.reload()" style="margin-top:20px; color:red; background:none; border:1px solid red; padding:10px; border-radius:5px;">⚠️ איפוס מלא (אם נתקע)</button>
     </div>
 
     <div id="workout-screen" class="screen">
@@ -85,14 +80,6 @@
     </div>
 
     <script>
-        // תופס שגיאות גלובליות ומציג אותן על המסך
-        window.onerror = function(msg, url, line) {
-            const box = document.getElementById('error-box');
-            box.style.display = 'block';
-            box.innerHTML += `Error: ${msg}<br>Line: ${line}<br>`;
-            return false;
-        };
-
         const firebaseConfig = {
           apiKey: "AIzaSyBR9taEgDlp4CaFa1oDlA2wM9ENoZD2V9U",
           authDomain: "nano-banana-gallery-4e291.firebaseapp.com",
@@ -101,13 +88,9 @@
           messagingSenderId: "843216131791",
           appId: "1:843216131791:web:e63ec1ab2f70b0808dc9ba"
         };
-        
-        try {
-            firebase.initializeApp(firebaseConfig);
-        } catch(e) { console.error(e); }
-        
+        firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
-        const COLLECTION = "gym_v14_stable"; 
+        const COLLECTION = "gym_v17_full_memory"; 
 
         const EXERCISES = {
             'legs': { title: 'רגליים ובטן', list: [
@@ -116,7 +99,8 @@
             ]},
             'push': { title: 'חזה וכתפיים', list: [
                 {id:'bench', n:'לחיצת חזה'}, {id:'incline', n:'חזה עליון'}, 
-                {id:'flys', n:'פרפר'}, {id:'press', n:'לחיצת כתפיים'}, {id:'tri', n:'יד אחורית'}
+                {id:'flys', n:'פרפר'}, {id:'press', n:'לחיצת כתפיים'}, 
+                {id:'lat_raise', n:'הרחקת כתפיים'}, {id:'tri', n:'יד אחורית'}
             ]},
             'pull': { title: 'גב ויד קדמית', list: [
                 {id:'pullups', n:'מתח'}, {id:'row', n:'חתירה'}, 
@@ -126,145 +110,83 @@
 
         const app = {
             currentType: null,
-            cloudData: {},
 
             load: async (type) => {
+                app.currentType = type;
+                document.getElementById('home-screen').classList.remove('visible');
+                document.getElementById('workout-screen').classList.add('visible');
+                document.getElementById('page-title').innerText = EXERCISES[type].title;
+                const container = document.getElementById('container');
+                container.innerHTML = '<div style="margin-top:50px;">טוען את האימון האחרון מהענן...</div>';
+
+                let lastWorkoutData = {};
                 try {
-                    app.currentType = type;
-                    document.getElementById('home-screen').classList.remove('visible');
-                    document.getElementById('workout-screen').classList.add('visible');
-                    document.getElementById('page-title').innerText = EXERCISES[type].title;
-                    const container = document.getElementById('container');
-                    container.innerHTML = 'בונה מסך...';
-
-                    // 1. ציור השלד (לפי זיכרון מקומי)
-                    app.renderSkeleton(type);
-
-                    // 2. הבאת נתונים מהענן
-                    container.innerHTML += '<div id="loading-indicator" style="font-size:0.8rem; color:#666;">טוען נתונים...</div>';
-                    
                     const snap = await db.collection(COLLECTION).where('type','==',type).orderBy('date','desc').limit(1).get();
                     if(!snap.empty) {
-                        app.cloudData = snap.docs[0].data().data;
-                        app.fillValues(type);
+                        lastWorkoutData = snap.docs[0].data().data;
                     }
-                    document.getElementById('loading-indicator').remove();
-                    
                 } catch(e) {
-                    alert("שגיאה בטעינה: " + e.message);
+                    alert("שגיאת רשת: " + e.message);
                 }
-            },
 
-            renderSkeleton: (type) => {
-                const container = document.getElementById('container');
-                container.innerHTML = ''; // ניקוי
+                container.innerHTML = '';
 
                 EXERCISES[type].list.forEach(ex => {
                     const card = document.createElement('div');
                     card.className = 'exercise-card';
-                    
-                    const rowsDiv = document.createElement('div');
-                    rowsDiv.id = `rows-${ex.id}`;
-
-                    // כותרת וכפתור הוספה
-                    card.innerHTML = `<span class="ex-title">${ex.n}</span>`;
-                    card.appendChild(rowsDiv);
+                    card.innerHTML = `<span class="ex-title">${ex.n}</span><div id="rows-${ex.id}"></div>`;
                     
                     const addBtn = document.createElement('button');
                     addBtn.className = 'add-btn';
                     addBtn.innerText = '+ הוסף סט';
-                    addBtn.onclick = () => app.addRow(ex.id);
+                    addBtn.onclick = () => app.addRow(ex.id, false, '', '');
                     card.appendChild(addBtn);
-
+                    
                     container.appendChild(card);
 
-                    // כמה שורות היו פעם שעברה?
-                    let savedRows = [];
-                    try {
-                        const saved = localStorage.getItem(`struct_v14_${ex.id}`);
-                        if (saved) savedRows = JSON.parse(saved);
-                    } catch(e) { console.log("Storage Error", e); }
-
-                    // ברירת מחדל: 3 שורות רגילות
-                    if (savedRows.length === 0) savedRows = ['normal', 'normal', 'normal'];
-
-                    // ציור השורות
-                    savedRows.forEach((type, idx) => {
-                        app.renderRowHTML(ex.id, type, idx);
-                    });
-                });
-            },
-
-            renderRowHTML: (exId, type, index) => {
-                const container = document.getElementById(`rows-${exId}`);
-                const row = document.createElement('div');
-                const isWarmup = type === 'warmup';
-                
-                row.className = isWarmup ? 'set-row is-warmup' : 'set-row';
-                row.dataset.type = type; 
-
-                // HTML פשוט
-                row.innerHTML = `
-                    <div class="set-badge" onclick="app.toggleType(this, '${exId}')">
-                        ${isWarmup ? 'חימום' : 'סט'}
-                    </div>
-                    <input type="number" placeholder="קג" class="inp-w">
-                    <input type="number" placeholder="חזרות" class="inp-r">
-                    <button class="del-btn" onclick="app.removeRow(this, '${exId}')">×</button>
-                `;
-                container.appendChild(row);
-            },
-
-            fillValues: (type) => {
-                EXERCISES[type].list.forEach(ex => {
-                    if (!app.cloudData[ex.id]) return;
-                    const rows = document.getElementById(`rows-${ex.id}`).children;
-                    const data = app.cloudData[ex.id];
-                    
-                    for (let i = 0; i < rows.length && i < data.length; i++) {
-                        rows[i].querySelector('.inp-w').value = data[i].w || '';
-                        rows[i].querySelector('.inp-r').value = data[i].r || '';
+                    // שחזור מלא: מבנה + נתונים
+                    if (lastWorkoutData[ex.id] && lastWorkoutData[ex.id].length > 0) {
+                        lastWorkoutData[ex.id].forEach(savedRow => {
+                            // מעבירים גם את המשקל (w) והחזרות (r) לפונקציה
+                            app.addRow(ex.id, savedRow.isWarmup, savedRow.w, savedRow.r); 
+                        });
+                    } else {
+                        // ברירת מחדל אם אין היסטוריה
+                        app.addRow(ex.id, false, '', '');
+                        app.addRow(ex.id, false, '', '');
+                        app.addRow(ex.id, false, '', '');
                     }
                 });
             },
 
-            // עדכון הזיכרון המקומי
-            updateStorage: (exId) => {
+            // הפונקציה מקבלת עכשיו גם משקל וחזרות
+            addRow: (exId, isWarmup, weight = '', reps = '') => {
                 const container = document.getElementById(`rows-${exId}`);
-                const structure = [];
-                Array.from(container.children).forEach(row => {
-                    structure.push(row.dataset.type); // שומר 'warmup' או 'normal'
-                });
-                localStorage.setItem(`struct_v14_${exId}`, JSON.stringify(structure));
-            },
-
-            addRow: (exId) => {
-                const container = document.getElementById(`rows-${exId}`);
-                // ברירת מחדל לשורה חדשה: רגילה
-                app.renderRowHTML(exId, 'normal', container.children.length);
-                app.updateStorage(exId);
-            },
-
-            removeRow: (btn, exId) => {
-                btn.parentElement.remove();
-                app.updateStorage(exId);
-            },
-
-            toggleType: (badge, exId) => {
-                const row = badge.parentElement;
-                const isWarmup = row.dataset.type === 'warmup';
+                const row = document.createElement('div');
+                row.className = isWarmup ? 'set-row is-warmup' : 'set-row';
                 
-                // הופך מצב
-                if (isWarmup) {
-                    row.dataset.type = 'normal';
+                const badgeText = isWarmup ? 'חימום' : 'סט';
+                
+                row.innerHTML = `
+                    <div class="type-badge" onclick="app.toggleType(this)">${badgeText}</div>
+                    <input type="number" placeholder="קג" class="inp-w" value="${weight}">
+                    <input type="number" placeholder="חזרות" class="inp-r" value="${reps}">
+                    <button class="del-btn" onclick="this.parentElement.remove()">×</button>
+                `;
+                container.appendChild(row);
+            },
+
+            toggleType: (badge) => {
+                const row = badge.parentElement;
+                const wasWarmup = row.classList.contains('is-warmup');
+                
+                if (wasWarmup) {
                     row.classList.remove('is-warmup');
                     badge.innerText = 'סט';
                 } else {
-                    row.dataset.type = 'warmup';
                     row.classList.add('is-warmup');
                     badge.innerText = 'חימום';
                 }
-                app.updateStorage(exId);
             },
 
             save: async () => {
@@ -272,16 +194,22 @@
                 btn.innerText = "שומר...";
                 
                 const allData = {};
+                
                 EXERCISES[app.currentType].list.forEach(ex => {
-                    const rows = document.getElementById(`rows-${ex.id}`).children;
+                    const rowsDiv = document.getElementById(`rows-${ex.id}`);
+                    const rows = rowsDiv.querySelectorAll('.set-row');
                     const exData = [];
-                    Array.from(rows).forEach(row => {
-                        exData.push({
-                            w: row.querySelector('.inp-w').value,
-                            r: row.querySelector('.inp-r').value
-                        });
+                    
+                    rows.forEach(row => {
+                        const w = row.querySelector('.inp-w').value;
+                        const r = row.querySelector('.inp-r').value;
+                        const isWarmup = row.classList.contains('is-warmup');
+                        
+                        // שומרים הכל כולל הערכים
+                        exData.push({ w, r, isWarmup });
                     });
-                    if (exData.length > 0) allData[ex.id] = exData;
+                    
+                    if(exData.length > 0) allData[ex.id] = exData;
                 });
 
                 try {
