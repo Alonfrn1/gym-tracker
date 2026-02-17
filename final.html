@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gym Tracker V8 (Final) 🚀</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        :root { --bg: #121212; --card: #1e1e1e; --text: #e0e0e0; --accent: #00e676; --warmup: #ff9800; --input: #333; }
+        body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; text-align: center; }
+        
+        h1 { color: var(--accent); margin-bottom: 20px; }
+        .menu-grid { display: grid; gap: 15px; max-width: 400px; margin: 0 auto; }
+        .menu-btn { background: var(--card); border: 2px solid var(--accent); color: white; padding: 20px; font-size: 1.2rem; border-radius: 12px; cursor: pointer; }
+        
+        .screen { display: none; padding-bottom: 80px; }
+        .visible { display: block; }
+        .back-btn { background: none; border: none; color: #888; text-decoration: underline; margin-bottom: 15px; cursor: pointer; }
+
+        .exercise-card { background: var(--card); padding: 10px; margin-bottom: 15px; border-radius: 10px; border-right: 5px solid var(--accent); text-align: right; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .ex-name { font-weight: bold; font-size: 1.1rem; }
+        
+        /* כפתורי הוספה */
+        .btn-group { display: flex; gap: 10px; }
+        
+        .add-btn { 
+            width: 35px; height: 35px; border-radius: 50%; font-size: 1.2rem; 
+            display: flex; align-items: center; justify-content: center; cursor: pointer; border: none;
+        }
+        .btn-warmup { background: rgba(255, 152, 0, 0.2); color: var(--warmup); border: 1px solid var(--warmup); }
+        .btn-set { background: rgba(0, 230, 118, 0.2); color: var(--accent); border: 1px solid var(--accent); }
+
+        /* שורות */
+        .set-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; background: rgba(255,255,255,0.05); padding: 5px; border-radius: 5px; }
+        .set-row.warmup { border: 1px solid var(--warmup); background: rgba(255, 152, 0, 0.15); }
+        
+        .type-toggle { display: flex; flex-direction: column; align-items: center; width: 40px; cursor: pointer; }
+        .type-icon { font-size: 1.2rem; }
+        .type-text { font-size: 0.6rem; color: #aaa; }
+
+        input { background: var(--input); border: 1px solid #555; color: white; padding: 10px; width: 100%; border-radius: 5px; text-align: center; font-size: 1.1rem; }
+        input:focus { border-color: var(--accent); outline: none; }
+        
+        .del-btn { background: none; border: none; color: #ff5252; font-size: 1.5rem; padding: 0 10px; cursor: pointer; }
+
+        .save-btn { 
+            position: fixed; bottom: 20px; left: 5%; width: 90%; 
+            background: var(--accent); color: black; border: none; padding: 15px; 
+            font-size: 1.3rem; font-weight: bold; border-radius: 50px; 
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5); cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="home-screen" class="screen visible">
+        <h1>Gym Tracker V8 🚀</h1>
+        <div class="menu-grid">
+            <button class="menu-btn" onclick="app.loadWorkout('legs')">🦵 רגליים</button>
+            <button class="menu-btn" onclick="app.loadWorkout('push')">💪 חזה/כתפיים/יד אחורית</button>
+            <button class="menu-btn" onclick="app.loadWorkout('pull')">🦍 גב/יד קדמית</button>
+            <button class="menu-btn" style="border-color:orange; color:orange;" onclick="app.showHistory()">📜 היסטוריה</button>
+        </div>
+    </div>
+
+    <div id="workout-screen" class="screen">
+        <button class="back-btn" onclick="app.goHome()">חזרה לתפריט</button>
+        <h2 id="page-title">...</h2>
+        <div id="exercises-list"></div>
+        <button class="save-btn" onclick="app.save()">💾 שמור אימון</button>
+    </div>
+
+    <div id="history-screen" class="screen">
+        <button class="back-btn" onclick="app.goHome()">חזרה לתפריט</button>
+        <div id="history-content">טוען...</div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+          apiKey: "AIzaSyBR9taEgDlp4CaFa1oDlA2wM9ENoZD2V9U",
+          authDomain: "nano-banana-gallery-4e291.firebaseapp.com",
+          projectId: "nano-banana-gallery-4e291",
+          storageBucket: "nano-banana-gallery-4e291.firebasestorage.app",
+          messagingSenderId: "843216131791",
+          appId: "1:843216131791:web:e63ec1ab2f70b0808dc9ba"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const COLLECTION = "gym_final_v1"; 
+
+        const EXERCISES = {
+            'legs': { title: 'רגליים ובטן', list: [
+                {id:'squat', n:'סקוואט'}, {id:'leg_curl', n:'כפיפת ברכיים'}, 
+                {id:'leg_ext', n:'פשיטת ברכיים'}, {id:'calves', n:'תאומים'}, 
+                {id:'abs', n:'בטן'}, {id:'leg_raise', n:'הרמות רגליים'}
+            ]},
+            'push': { title: 'חזה וכתפיים', list: [
+                {id:'bench', n:'לחיצת חזה (בנץ)'}, {id:'incline', n:'חזה עליון'}, 
+                {id:'flys', n:'פרפר'}, {id:'press', n:'לחיצת כתפיים'}, 
+                {id:'lat_raise', n:'הרחקת כתפיים'}, {id:'tri', n:'יד אחורית'}, 
+                {id:'tri_ov', n:'יד אחורית מעל הראש'}
+            ]},
+            'pull': { title: 'גב ויד קדמית', list: [
+                {id:'pullups', n:'מתח'}, {id:'chinup', n:'מתח עילי'}, 
+                {id:'row', n:'חתירה'}, {id:'rear_delt', n:'כתף אחורית'}, 
+                {id:'curl', n:'כפיפת מרפקים'}, {id:'hammer', n:'פטישים'}
+            ]}
+        };
+
+        const app = {
+            currentType: null,
+
+            goHome: () => {
+                document.querySelectorAll('.screen').forEach(el => el.classList.remove('visible'));
+                document.getElementById('home-screen').classList.add('visible');
+            },
+
+            loadWorkout: async (type) => {
+                app.currentType = type;
+                const data = EXERCISES[type];
+                document.querySelectorAll('.screen').forEach(el => el.classList.remove('visible'));
+                document.getElementById('workout-screen').classList.add('visible');
+                document.getElementById('page-title').innerText = data.title;
+                const container = document.getElementById('exercises-list');
+                container.innerHTML = '<div style="margin-top:20px;">טוען נתונים...</div>';
+
+                let history = {};
+                try {
+                    const snap = await db.collection(COLLECTION).where('type','==',type).orderBy('date','desc').limit(1).get();
+                    if(!snap.empty) history = snap.docs[0].data().data || {};
+                } catch(e) { console.error(e); }
+
+                container.innerHTML = ''; 
+
+                data.list.forEach(ex => {
+                    const card = document.createElement('div');
+                    card.className = 'exercise-card';
+                    
+                    // כאן השינוי: שני כפתורים
+                    card.innerHTML = `
+                        <div class="card-header">
+                            <span class="ex-name">${ex.n}</span>
+                            <div class="btn-group">
+                                <button class="add-btn btn-warmup" onclick="app.addRow('${ex.id}', '', '', true)">🔥</button>
+                                <button class="add-btn btn-set" onclick="app.addRow('${ex.id}', '', '', false)">+</button>
+                            </div>
+                        </div>
+                        <div id="rows-${ex.id}"></div>
+                    `;
+                    container.appendChild(card);
+
+                    const savedRows = history[ex.id];
+                    if (savedRows && savedRows.length > 0) {
+                        savedRows.forEach(r => app.addRow(ex.id, r.w, r.r, r.warmup));
+                    } else {
+                        app.addRow(ex.id, '', '', false);
+                        app.addRow(ex.id, '', '', false);
+                    }
+                });
+            },
+
+            addRow: (exId, w='', r='', isWarmup=false) => {
+                const container = document.getElementById(`rows-${exId}`);
+                const row = document.createElement('div');
+                row.className = isWarmup ? 'set-row warmup' : 'set-row';
+                
+                row.innerHTML = `
+                    <div class="type-toggle">
+                        <span class="type-icon">${isWarmup ? '🔥' : '💪'}</span>
+                        <span class="type-text">${isWarmup ? 'חימום' : 'סט'}</span>
+                    </div>
+                    <input type="number" placeholder="קג" class="inp-w" value="${w}">
+                    <input type="number" placeholder="חזרות" class="inp-r" value="${r}">
+                    <button class="del-btn">×</button>
+                `;
+
+                const toggleBtn = row.querySelector('.type-toggle');
+                toggleBtn.onclick = () => {
+                    row.classList.toggle('warmup');
+                    const isW = row.classList.contains('warmup');
+                    toggleBtn.querySelector('.type-icon').innerText = isW ? '🔥' : '💪';
+                    toggleBtn.querySelector('.type-text').innerText = isW ? 'חימום' : 'סט';
+                };
+
+                row.querySelector('.del-btn').onclick = () => row.remove();
+                container.appendChild(row);
+            },
+
+            save: async () => {
+                const saveBtn = document.querySelector('.save-btn');
+                saveBtn.innerText = "שומר...";
+                const allData = {};
+                const typeData = EXERCISES[app.currentType];
+
+                typeData.list.forEach(ex => {
+                    const rowsDiv = document.getElementById(`rows-${ex.id}`);
+                    const rows = rowsDiv.querySelectorAll('.set-row');
+                    const exerciseRows = [];
+                    rows.forEach(row => {
+                        const w = row.querySelector('.inp-w').value;
+                        const r = row.querySelector('.inp-r').value;
+                        const isWarmup = row.classList.contains('warmup');
+                        exerciseRows.push({ w, r, warmup: isWarmup });
+                    });
+                    if (exerciseRows.length > 0) allData[ex.id] = exerciseRows;
+                });
+
+                try {
+                    await db.collection(COLLECTION).add({
+                        type: app.currentType, date: firebase.firestore.FieldValue.serverTimestamp(), data: allData
+                    });
+                    confetti({ spread: 100, origin: { y: 0.8 } });
+                    saveBtn.innerText = "נשמר! ✅";
+                    setTimeout(() => { saveBtn.innerText = "💾 שמור אימון"; app.goHome(); }, 1500);
+                } catch (e) { alert("שגיאה: " + e.message); saveBtn.innerText = "שגיאה ❌"; }
+            },
+
+            showHistory: async () => {
+                document.querySelectorAll('.screen').forEach(el => el.classList.remove('visible'));
+                document.getElementById('history-screen').classList.add('visible');
+                const content = document.getElementById('history-content');
+                content.innerHTML = 'טוען היסטוריה...';
+                const snap = await db.collection(COLLECTION).orderBy('date', 'desc').limit(15).get();
+                content.innerHTML = '';
+                if (snap.empty) { content.innerHTML = "אין אימונים עדיין"; return; }
+
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    const date = d.date ? d.date.toDate().toLocaleDateString('he-IL') : '?';
+                    const title = EXERCISES[d.type]?.title || d.type;
+                    let details = '';
+                    for (const [eid, rows] of Object.entries(d.data)) {
+                        let name = eid;
+                        for(let t in EXERCISES) {
+                            const found = EXERCISES[t].list.find(e => e.id === eid);
+                            if(found) name = found.n;
+                        }
+                        const validRows = rows.filter(r => r.w && r.r && !r.warmup).map(r => `${r.w}x${r.r}`);
+                        if (validRows.length > 0) details += `<div><strong>${name}:</strong> ${validRows.join(', ')}</div>`;
+                    }
+                    const item = document.createElement('div');
+                    item.style = "background:#2d2d2d; margin-bottom:10px; padding:10px; border-radius:8px; text-align:right;";
+                    item.innerHTML = `<div style="color:#00e676; margin-bottom:5px;">${date} - ${title}</div>${details || 'ללא נתונים'}`;
+                    content.appendChild(item);
+                });
+            }
+        };
+    </script>
+</body>
+</html>
